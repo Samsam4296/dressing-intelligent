@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native builds
+ios/
+android/
+
+# Environment variables (CRITICAL - NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+
+# Secrets & Certificates
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*.orig.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+__snapshots__/
+
+# Temporary files
+.metro-health-check*
+*.tmp
+*.temp
+
+# expo router (auto-generated)
+expo-env.d.ts

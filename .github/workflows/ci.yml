@@ -1,0 +1,72 @@
+# CI Pipeline for Dressing Intelligent
+# Runs on push/PR to main and develop branches
+# Steps: lint → typecheck → test → expo doctor (sequential, fail-fast)
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: TypeScript Check
+        run: pnpm typecheck
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Expo Doctor
+        run: pnpm expo:doctor
+
+      # Sentry Source Maps Upload (main branch only)
+      # Required secrets: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT
+      - name: Upload Source Maps to Sentry
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: |
+          # Create release based on package.json version
+          VERSION=$(node -p "require('./package.json').version")
+          npx @sentry/cli releases new "dressing-intelligent@${VERSION}"
+          npx @sentry/cli releases files "dressing-intelligent@${VERSION}" upload-sourcemaps ./dist --ignore node_modules || true
+          npx @sentry/cli releases finalize "dressing-intelligent@${VERSION}"
+          echo "✅ Sentry release dressing-intelligent@${VERSION} created"

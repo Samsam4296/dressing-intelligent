@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "dressing-intelligent",
+    "slug": "dressing-intelligent",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+
+    "scheme": "dressing-intelligent",
+    "platforms": ["ios", "android"],
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "your-sentry-org",
+          "project": "dressing-intelligent"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+
+      "tsconfigPaths": true
+    },
+
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+
+    "userInterfaceStyle": "light",
+
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    }
+  }
+}
