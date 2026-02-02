@@ -86,13 +86,13 @@ describe('Profile Store', () => {
       useProfileStore.getState().setActiveProfile(profiles[1].id);
 
       // WHEN: Setting profiles with same IDs
-      const updatedProfiles = profiles.map((p) => ({ ...p, name: 'Updated' }));
+      const updatedProfiles = profiles.map((p) => ({ ...p, display_name: 'Updated' }));
       useProfileStore.getState().setProfiles(updatedProfiles);
 
       // THEN: Active profile is preserved (with updates)
       const state = useProfileStore.getState();
       expect(state.activeProfileId).toBe(profiles[1].id);
-      expect(state.activeProfile?.name).toBe('Updated');
+      expect(state.activeProfile?.display_name).toBe('Updated');
     });
   });
 
@@ -144,11 +144,11 @@ describe('Profile Store', () => {
       useProfileStore.getState().setProfiles(profiles);
 
       // WHEN: Updating first profile
-      useProfileStore.getState().updateProfile(profiles[0].id, { name: 'Updated Name' });
+      useProfileStore.getState().updateProfile(profiles[0].id, { display_name: 'Updated Name' });
 
       // THEN: Profile is updated
       const updated = useProfileStore.getState().profiles.find((p) => p.id === profiles[0].id);
-      expect(updated?.name).toBe('Updated Name');
+      expect(updated?.display_name).toBe('Updated Name');
     });
 
     it('[P1] updates active profile if it is the one being updated', () => {
@@ -157,10 +157,10 @@ describe('Profile Store', () => {
       useProfileStore.getState().setProfiles(profiles);
 
       // WHEN: Updating active profile
-      useProfileStore.getState().updateProfile(profiles[0].id, { name: 'Active Updated' });
+      useProfileStore.getState().updateProfile(profiles[0].id, { display_name: 'Active Updated' });
 
       // THEN: Active profile is also updated
-      expect(useProfileStore.getState().activeProfile?.name).toBe('Active Updated');
+      expect(useProfileStore.getState().activeProfile?.display_name).toBe('Active Updated');
     });
   });
 

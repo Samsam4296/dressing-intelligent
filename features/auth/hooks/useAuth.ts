@@ -14,7 +14,7 @@
  * - Persists session updates to MMKV
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { storage, STORAGE_KEYS, storageHelpers } from '@/lib/storage';

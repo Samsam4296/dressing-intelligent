@@ -6,7 +6,7 @@
  */
 
 import { useSettingsStore } from '@/stores/settings.store';
-import type { LocationData, NotificationSettings, SubscriptionData } from '@/stores/settings.store';
+import type { LocationData } from '@/stores/settings.store';
 
 // Mock storage
 jest.mock('@/lib/storage', () => ({

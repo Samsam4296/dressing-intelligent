@@ -21,7 +21,7 @@ export const createMockUser = (overrides: Partial<User> = {}): User => {
     role: 'authenticated',
     email: `test${userIdCounter}@example.com`,
     email_confirmed_at: new Date().toISOString(),
-    phone: null,
+    phone: undefined,
     confirmed_at: new Date().toISOString(),
     last_sign_in_at: new Date().toISOString(),
     app_metadata: { provider: 'email' },
