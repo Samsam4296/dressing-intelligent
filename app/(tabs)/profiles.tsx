@@ -9,10 +9,45 @@
  */
 
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, StatusBar } from 'react-native';
+import { SafeAreaView, ScrollView, View, Text, StatusBar, Pressable } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import * as Sentry from '@sentry/react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ProfilesList, AddProfileModal } from '@/features/profiles';
-import { Toast } from '@/shared/components/Toast';
+// Toast is now mounted at root _layout.tsx for app-wide visibility
+
+/**
+ * Error fallback component shown when ProfilesList crashes
+ * Per project-context.md: Error boundary on critical features
+ */
+function ProfilesErrorFallback({ resetError }: { resetError: () => void }) {
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  return (
+    <View className="flex-1 items-center justify-center p-6">
+      <Ionicons
+        name="alert-circle-outline"
+        size={64}
+        color={isDark ? '#EF4444' : '#DC2626'}
+      />
+      <Text className="text-xl font-bold text-gray-900 dark:text-white mt-4 text-center">
+        Une erreur est survenue
+      </Text>
+      <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">
+        Impossible de charger les profils. Veuillez réessayer.
+      </Text>
+      <Pressable
+        className="mt-6 bg-blue-600 dark:bg-blue-500 px-6 py-3 rounded-xl min-h-[48px] items-center justify-center"
+        onPress={resetError}
+        accessibilityRole="button"
+        accessibilityLabel="Réessayer"
+      >
+        <Text className="text-white font-semibold">Réessayer</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 /**
  * ProfilesScreen - Main screen for profile management
@@ -69,15 +104,24 @@ export default function ProfilesScreen() {
         </Text>
       </View>
 
-      {/* Content */}
+      {/* Content with Error Boundary (per project-context.md) */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
-        <ProfilesList
-          onAddProfile={handleOpenAddModal}
-        />
+        <Sentry.ErrorBoundary
+          fallback={({ resetError }) => <ProfilesErrorFallback resetError={resetError} />}
+          onError={(error) => {
+            Sentry.captureException(error, {
+              tags: { feature: 'profiles', component: 'ProfilesList' },
+            });
+          }}
+        >
+          <ProfilesList
+            onAddProfile={handleOpenAddModal}
+          />
+        </Sentry.ErrorBoundary>
       </ScrollView>
 
       {/* Add Profile Modal */}
@@ -86,9 +130,6 @@ export default function ProfilesScreen() {
         onClose={handleCloseAddModal}
         onProfileCreated={handleProfileCreated}
       />
-
-      {/* Toast notification component */}
-      <Toast />
     </SafeAreaView>
   );
 }

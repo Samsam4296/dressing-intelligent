@@ -74,7 +74,7 @@ export const ProfileBubble = ({
 
   return (
     <Container
-      className="items-center min-w-[80px]"
+      className="items-center min-w-[80px] relative"
       {...containerProps}
     >
       {/* Avatar Container with active indicator */}

@@ -35,6 +35,7 @@ import Animated, {
   SlideOutDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AvatarPicker } from './AvatarPicker';
 import { useCreateProfile } from '../hooks/useProfiles';
@@ -135,6 +136,18 @@ export const AddProfileModal = ({
           onProfileCreated?.();
         },
         onError: (error) => {
+          // Log error to Sentry (per project-context.md - NEVER console.log in production)
+          Sentry.captureException(error, {
+            tags: {
+              feature: 'profiles',
+              action: 'createProfile',
+            },
+            extra: {
+              profileName: name.trim(),
+              hasAvatar: !!avatarUri,
+            },
+          });
+
           // Error haptic feedback
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 

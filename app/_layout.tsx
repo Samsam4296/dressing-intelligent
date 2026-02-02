@@ -5,6 +5,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { initSentry } from '@/lib/sentry';
 import { useAuth } from '@/features/auth';
+import { Toast } from '@/shared/components/Toast';
 
 // Initialize Sentry BEFORE any React rendering (Story 0-6)
 initSentry();
@@ -48,10 +49,14 @@ export default function Layout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    />
+    <>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      />
+      {/* Global Toast notification - mounted at root for app-wide visibility */}
+      <Toast />
+    </>
   );
 }
