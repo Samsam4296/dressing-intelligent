@@ -11,11 +11,14 @@
  * AC#4: Session invalidation after reset
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { authService } from '../services/authService';
 import { validatePassword, validateConfirmPassword } from './useFormValidation';
 import type { AuthError } from '../types/auth.types';
 import * as Sentry from '@sentry/react-native';
+
+// Code Review Fix #5: Client-side cooldown for rate limiting UX
+const REQUEST_COOLDOWN_MS = 60000; // 60 seconds between requests
 
 /**
  * Password reset request state
@@ -66,6 +69,12 @@ interface UsePasswordResetReturn {
     confirmPassword: string
   ) => { isValid: boolean; errors: string[] };
   getPasswordCriteria: (password: string) => PasswordCriteria;
+
+  // Code Review Fix #5: Cooldown state for rate limiting UX
+  /** Seconds remaining before another request can be made */
+  cooldownSecondsRemaining: number;
+  /** Whether cooldown is active */
+  isCooldownActive: boolean;
 }
 
 /**
@@ -118,12 +127,57 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
     error: null,
   });
 
+  // Code Review Fix #5: Client-side cooldown state
+  const [cooldownSecondsRemaining, setCooldownSecondsRemaining] = useState(0);
+  const lastRequestTimeRef = useRef<number | null>(null);
+  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const isCooldownActive = cooldownSecondsRemaining > 0;
+
+  /**
+   * Start cooldown timer after successful request
+   */
+  const startCooldown = useCallback(() => {
+    lastRequestTimeRef.current = Date.now();
+    setCooldownSecondsRemaining(Math.ceil(REQUEST_COOLDOWN_MS / 1000));
+
+    // Clear any existing interval
+    if (cooldownIntervalRef.current) {
+      clearInterval(cooldownIntervalRef.current);
+    }
+
+    // Update countdown every second
+    cooldownIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - (lastRequestTimeRef.current ?? Date.now());
+      const remaining = Math.max(0, Math.ceil((REQUEST_COOLDOWN_MS - elapsed) / 1000));
+      setCooldownSecondsRemaining(remaining);
+
+      if (remaining === 0 && cooldownIntervalRef.current) {
+        clearInterval(cooldownIntervalRef.current);
+        cooldownIntervalRef.current = null;
+      }
+    }, 1000);
+  }, []);
+
   /**
    * Request password reset email (AC#1)
    * @param email - User's email address
    * @returns Promise<boolean> - true if successful
    */
   const requestPasswordReset = useCallback(async (email: string): Promise<boolean> => {
+    // Code Review Fix #5: Check cooldown before allowing request
+    if (isCooldownActive) {
+      setRequestState({
+        isLoading: false,
+        isSuccess: false,
+        error: {
+          code: 'COOLDOWN_ACTIVE',
+          message: `Veuillez patienter ${cooldownSecondsRemaining} secondes avant de réessayer`,
+        },
+      });
+      return false;
+    }
+
     setRequestState({
       isLoading: true,
       isSuccess: false,
@@ -147,6 +201,9 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
         isSuccess: true,
         error: null,
       });
+
+      // Code Review Fix #5: Start cooldown on successful request
+      startCooldown();
 
       Sentry.addBreadcrumb({
         category: 'auth',
@@ -310,5 +367,9 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
     validateNewPassword,
     validatePasswordMatch,
     getPasswordCriteria,
+
+    // Code Review Fix #5: Cooldown for rate limiting UX
+    cooldownSecondsRemaining,
+    isCooldownActive,
   };
 };

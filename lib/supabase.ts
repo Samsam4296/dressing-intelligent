@@ -9,15 +9,21 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
+import * as Sentry from '@sentry/react-native';
 
 // Environment variables validation
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
+  // Use Sentry instead of console.warn per project-context.md (Code Review Fix #1)
+  Sentry.captureMessage(
     'Supabase environment variables are not configured. ' +
-      'Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.'
+      'Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your .env file.',
+    {
+      level: 'warning',
+      tags: { feature: 'config', service: 'supabase' },
+    }
   );
 }
 

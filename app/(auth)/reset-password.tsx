@@ -60,6 +60,18 @@ export default function ResetPasswordPage() {
         }
       } else if (token_hash) {
         // Some Supabase configurations use token_hash instead
+        // Code Review Fix #4: Validate token_hash format before API call
+        if (token_hash.length < 10 || token_hash.length > 500) {
+          Sentry.captureMessage('Invalid token_hash format', {
+            level: 'warning',
+            tags: { feature: 'auth', action: 'resetPasswordTokenValidation' },
+            extra: { tokenLength: token_hash.length },
+          });
+          setError('Lien invalide. Veuillez redemander un lien de réinitialisation.');
+          setIsLoading(false);
+          return;
+        }
+
         try {
           const { error } = await supabase.auth.verifyOtp({
             token_hash,

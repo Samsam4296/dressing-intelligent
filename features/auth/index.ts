@@ -15,6 +15,7 @@ export {
 } from './hooks/useFormValidation';
 export { usePasswordReset } from './hooks/usePasswordReset';
 export type { PasswordCriteria } from './hooks/usePasswordReset';
+export { useShakeAnimation } from './hooks/useShakeAnimation';
 
 // Services
 export { authService } from './services/authService';
