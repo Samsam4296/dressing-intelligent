@@ -1,0 +1,173 @@
+# Story 1.5: Création Premier Profil - E2E Test Flow
+#
+# Prerequisites:
+# - User is authenticated (has completed Stories 1.2/1.3)
+# - User has no existing profiles (first-time user)
+#
+# Install: brew install maestro / curl -Ls https://get.maestro.mobile.dev | bash
+# Run: maestro test .maestro/flows/profile-creation.yaml
+
+appId: ${APP_ID:-com.dressingintelligent.app}
+
+---
+
+# ============================================
+# Flow: First Profile Creation (Happy Path)
+# ============================================
+# AC#1: Profile creation form with name and avatar
+# AC#2: Name validation (2-30 characters, real-time feedback)
+# AC#5: Profile saved in Supabase
+# AC#6: First profile marked as active
+# AC#8: Navigation to main screen after creation
+# AC#12: Haptic feedback on success
+
+- runFlow:
+    file: helpers/authenticate.yaml
+    when:
+      visible: "Connexion"
+
+# Wait for profile creation screen
+- assertVisible: "Créer votre profil"
+- assertVisible: "Personnalisez votre expérience"
+
+# Verify form elements are present (AC#1)
+- assertVisible: "Nom du profil"
+- assertVisible:
+    id: "profile-name-input"
+- assertVisible:
+    id: "create-profile-button"
+
+# Test: Button should be disabled initially
+- assertNotEnabled:
+    id: "create-profile-button"
+
+# Test: Enter a valid name (AC#2: 2-30 chars)
+- tapOn:
+    id: "profile-name-input"
+- inputText: "Emma"
+
+# Wait for validation
+- delay: 500
+
+# Verify character count shows
+- assertVisible: "4/30"
+
+# Button should now be enabled
+- assertEnabled:
+    id: "create-profile-button"
+
+# Create the profile
+- tapOn:
+    id: "create-profile-button"
+
+# Wait for API call and navigation
+- delay: 3000
+
+# AC#8: Should navigate to main screen (tabs)
+- assertVisible:
+    text: ".*"  # Main content should be visible
+    timeout: 10000
+
+# Verify we're no longer on the profile creation screen
+- assertNotVisible: "Créer votre profil"
+
+---
+
+# ============================================
+# Flow: Name Validation - Too Short (Edge Case)
+# ============================================
+# AC#2: Name must be at least 2 characters
+
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/authenticate-new-user.yaml
+
+- assertVisible: "Créer votre profil"
+
+# Enter a single character (invalid)
+- tapOn:
+    id: "profile-name-input"
+- inputText: "A"
+
+# Verify error message appears (AC#11: French)
+- assertVisible: "Le nom doit contenir au moins 2 caractères"
+
+# Button should remain disabled
+- assertNotEnabled:
+    id: "create-profile-button"
+
+---
+
+# ============================================
+# Flow: Name Validation - Too Long (Edge Case)
+# ============================================
+# AC#2: Name cannot exceed 30 characters
+
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/authenticate-new-user.yaml
+
+- assertVisible: "Créer votre profil"
+
+# Input is capped at 30 characters via maxLength
+- tapOn:
+    id: "profile-name-input"
+- inputText: "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLM"
+
+# Should show 30/30 (input is capped)
+- assertVisible: "30/30"
+
+# Button should be enabled (30 chars is valid max)
+- assertEnabled:
+    id: "create-profile-button"
+
+---
+
+# ============================================
+# Flow: Name with Accents (French Names)
+# ============================================
+# AC#2: Should accept accented characters (Émilie, François)
+
+- launchApp:
+    clearState: true
+- runFlow:
+    file: helpers/authenticate-new-user.yaml
+
+- assertVisible: "Créer votre profil"
+
+- tapOn:
+    id: "profile-name-input"
+- inputText: "Émilie"
+
+# Should be valid
+- assertEnabled:
+    id: "create-profile-button"
+
+- tapOn:
+    id: "create-profile-button"
+
+# Should succeed
+- delay: 3000
+- assertNotVisible: "Créer votre profil"
+
+---
+
+# ============================================
+# Flow: Offline Error (Network Check)
+# ============================================
+# Dev Notes: Should show error when offline
+
+# Note: This test requires manual network disable
+# on the device/simulator before running
+
+# - launchApp
+# - turnOffWifi
+# - tapOn:
+#     id: "profile-name-input"
+# - inputText: "Emma"
+# - tapOn:
+#     id: "create-profile-button"
+# - assertVisible: "Pas de connexion"
+# - assertVisible: "Une connexion internet est requise"

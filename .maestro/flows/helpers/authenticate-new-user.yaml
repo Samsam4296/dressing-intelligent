@@ -1,0 +1,40 @@
+# Helper Flow: Authenticate New User (No Profiles)
+#
+# This flow creates a new test user or signs in with a fresh account
+# that has no existing profiles.
+#
+# For testing, you should:
+# 1. Create a test user in Supabase: test-new-user@example.com
+# 2. Ensure this user has NO profiles in the database
+# 3. Set env vars: NEW_TEST_USER_EMAIL, NEW_TEST_USER_PASSWORD
+
+appId: ${APP_ID:-com.dressingintelligent.app}
+
+---
+
+# Launch fresh
+- clearState
+
+# Wait for initial screen
+- delay: 2000
+
+# Navigate to login if on welcome screen
+- runFlow:
+    when:
+      visible: "Bienvenue"
+    commands:
+      - tapOn:
+          text: "Se connecter"
+
+# Sign in with new test user
+- tapOn:
+    text: "Email"
+- inputText: ${NEW_TEST_USER_EMAIL:-test-new@example.com}
+- tapOn:
+    text: "Mot de passe"
+- inputText: ${NEW_TEST_USER_PASSWORD:-testpassword123}
+- tapOn:
+    text: "Se connecter"
+
+# Wait for auth and redirect to profile creation
+- delay: 3000

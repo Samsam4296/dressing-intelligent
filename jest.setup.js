@@ -193,16 +193,16 @@ jest.mock('@/lib/supabase', () => ({
   isSupabaseConfigured: jest.fn().mockReturnValue(true),
 }));
 
-// Mock react-native-mmkv (Story 0-3, 1.3)
-jest.mock('react-native-mmkv', () => ({
-  MMKV: jest.fn().mockImplementation(() => ({
-    getString: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-    contains: jest.fn().mockReturnValue(false),
-    clearAll: jest.fn(),
-    getAllKeys: jest.fn().mockReturnValue([]),
-  })),
+// Mock @react-native-async-storage/async-storage
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn().mockResolvedValue(null),
+  setItem: jest.fn().mockResolvedValue(undefined),
+  removeItem: jest.fn().mockResolvedValue(undefined),
+  clear: jest.fn().mockResolvedValue(undefined),
+  getAllKeys: jest.fn().mockResolvedValue([]),
+  multiGet: jest.fn().mockResolvedValue([]),
+  multiSet: jest.fn().mockResolvedValue(undefined),
+  multiRemove: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock lib/storage module (Story 0-3, 1.3)

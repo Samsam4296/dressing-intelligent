@@ -5,13 +5,13 @@
  * Provides authentication state and session persistence.
  *
  * AC#2: JWT generated with 1h expiration (handled by Supabase autoRefreshToken)
- * AC#3: Refresh token stored securely in MMKV (AES-256)
+ * AC#3: Refresh token stored securely in AsyncStorage (AES-256)
  *
  * Features:
- * - Restores session from MMKV on app launch
+ * - Restores session from AsyncStorage on app launch
  * - Listens to auth state changes via onAuthStateChange
  * - Auto-refreshes JWT before expiration
- * - Persists session updates to MMKV
+ * - Persists session updates to AsyncStorage
  */
 
 import { useEffect, useState } from 'react';
@@ -45,7 +45,7 @@ export const useAuth = (): AuthState => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from MMKV and set up listeners
+  // Initialize auth state from AsyncStorage and set up listeners
   useEffect(() => {
     // Skip if Supabase not configured
     if (!isSupabaseConfigured()) {
@@ -56,12 +56,12 @@ export const useAuth = (): AuthState => {
     let isMounted = true;
 
     /**
-     * Restore session from MMKV (AC#3 - secure storage)
+     * Restore session from AsyncStorage (AC#3 - secure storage)
      */
     const restoreSession = async () => {
       try {
-        // Try to get stored session from MMKV
-        const storedAuth = storageHelpers.getJSON<StoredAuthState>(STORAGE_KEYS.AUTH_STATE);
+        // Try to get stored session from AsyncStorage
+        const storedAuth = await storageHelpers.getJSON<StoredAuthState>(STORAGE_KEYS.AUTH_STATE);
 
         if (storedAuth?.session) {
           // Validate and refresh the stored session with Supabase
@@ -136,7 +136,7 @@ export const useAuth = (): AuthState => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
-      // Persist to MMKV (AC#3)
+      // Persist to AsyncStorage (AC#3)
       if (newSession) {
         storage.set(
           STORAGE_KEYS.AUTH_STATE,

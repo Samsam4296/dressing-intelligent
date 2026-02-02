@@ -1,0 +1,23 @@
+# Maestro Configuration
+# Story 1.5: Création Premier Profil - E2E Tests
+#
+# Run with: maestro test .maestro/flows/
+
+appId: com.dressingintelligent.app
+
+# iOS config
+ios:
+  bundleId: com.dressingintelligent.app
+
+# Android config
+android:
+  packageName: com.dressingintelligent.app
+
+# Default timeout for all actions
+timeout: 10000
+
+# Tags for filtering tests
+tags:
+  - profile
+  - onboarding
+  - story-1-5

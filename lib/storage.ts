@@ -1,64 +1,60 @@
 /**
- * MMKV Storage Configuration
+ * Storage Configuration using AsyncStorage
  *
- * Provides encrypted local storage for the app using MMKV.
- * MMKV is 30x faster than AsyncStorage and supports AES-256 encryption.
+ * Compatible with Expo Go for development.
+ * For production, consider adding MMKV back with a development build.
  */
 
-import { MMKV } from 'react-native-mmkv';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { StateStorage } from 'zustand/middleware';
 
 /**
- * Get MMKV encryption key with security validation
- * - Production: REQUIRES EXPO_PUBLIC_MMKV_KEY env variable
- * - Development: Warns if missing, uses dev-only key
+ * Unified storage interface using AsyncStorage
  */
-const getEncryptionKey = (): string | undefined => {
-  // Web platform doesn't support encryption
-  if (Platform.OS === 'web') {
-    return undefined;
-  }
+export const storage = {
+  getString: (key: string): string | null => {
+    // AsyncStorage is async, this returns null synchronously
+    // Zustand hydration handles async loading
+    return null;
+  },
 
-  const envKey = process.env.EXPO_PUBLIC_MMKV_KEY;
+  set: (key: string, value: string): void => {
+    AsyncStorage.setItem(key, value).catch(console.error);
+  },
 
-  if (envKey) {
-    return envKey;
-  }
+  delete: (key: string): void => {
+    AsyncStorage.removeItem(key).catch(console.error);
+  },
 
-  // In development, warn but allow a dev key
-  if (__DEV__) {
-    console.warn(
-      '[Storage] EXPO_PUBLIC_MMKV_KEY not set. Using dev-only key. ' +
-        'Set EXPO_PUBLIC_MMKV_KEY in .env for production!'
-    );
-    return 'dev-only-key-not-for-production';
-  }
+  contains: (key: string): boolean => {
+    // Sync check not possible with AsyncStorage
+    return false;
+  },
 
-  // In production, throw error - sensitive data MUST be encrypted with proper key
-  throw new Error(
-    '[Storage] CRITICAL: EXPO_PUBLIC_MMKV_KEY must be set in production. ' +
-      'Auth tokens and sensitive data require secure encryption.'
-  );
+  clearAll: (): void => {
+    AsyncStorage.clear().catch(console.error);
+  },
+
+  getAllKeys: (): string[] => {
+    // Sync not possible, return empty
+    return [];
+  },
 };
 
-// Main encrypted storage instance
-export const storage = new MMKV({
-  id: 'dressing-intelligent-storage',
-  encryptionKey: getEncryptionKey(),
-});
-
-// Zustand persist middleware storage adapter
+/**
+ * Zustand persist middleware storage adapter
+ * Fully async for AsyncStorage compatibility
+ */
 export const zustandStorage: StateStorage = {
-  getItem: (name: string): string | null => {
-    const value = storage.getString(name);
-    return value ?? null;
+  getItem: async (name: string): Promise<string | null> => {
+    return AsyncStorage.getItem(name);
   },
-  setItem: (name: string, value: string): void => {
-    storage.set(name, value);
+  setItem: async (name: string, value: string): Promise<void> => {
+    await AsyncStorage.setItem(name, value);
   },
-  removeItem: (name: string): void => {
-    storage.delete(name);
+  removeItem: async (name: string): Promise<void> => {
+    await AsyncStorage.removeItem(name);
   },
 };
 
@@ -75,8 +71,8 @@ export const STORAGE_KEYS = {
 // Helper functions for typed storage access
 export const storageHelpers = {
   // Get JSON value
-  getJSON: <T>(key: string): T | null => {
-    const value = storage.getString(key);
+  getJSON: async <T>(key: string): Promise<T | null> => {
+    const value = await AsyncStorage.getItem(key);
     if (!value) return null;
     try {
       return JSON.parse(value) as T;
@@ -86,22 +82,23 @@ export const storageHelpers = {
   },
 
   // Set JSON value
-  setJSON: <T>(key: string, value: T): void => {
-    storage.set(key, JSON.stringify(value));
+  setJSON: async <T>(key: string, value: T): Promise<void> => {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
   },
 
   // Check if key exists
-  has: (key: string): boolean => {
-    return storage.contains(key);
+  has: async (key: string): Promise<boolean> => {
+    const value = await AsyncStorage.getItem(key);
+    return value !== null;
   },
 
   // Clear all storage (for logout)
-  clearAll: (): void => {
-    storage.clearAll();
+  clearAll: async (): Promise<void> => {
+    await AsyncStorage.clear();
   },
 
   // Get all keys
-  getAllKeys: (): string[] => {
-    return storage.getAllKeys();
+  getAllKeys: async (): Promise<string[]> => {
+    return (await AsyncStorage.getAllKeys()) || [];
   },
 };

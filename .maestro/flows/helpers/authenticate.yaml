@@ -1,0 +1,30 @@
+# Helper Flow: Authenticate Existing User
+#
+# This flow signs in an existing test user.
+# Used when the app shows the login screen.
+
+appId: ${APP_ID:-com.dressingintelligent.app}
+
+---
+
+# Skip if already authenticated (no login screen visible)
+- runFlow:
+    when:
+      notVisible: "Connexion"
+    commands:
+      - noop
+
+# If login screen is visible, sign in
+- runFlow:
+    when:
+      visible: "Connexion"
+    commands:
+      - tapOn:
+          text: "Email"
+      - inputText: ${TEST_USER_EMAIL:-test@example.com}
+      - tapOn:
+          text: "Mot de passe"
+      - inputText: ${TEST_USER_PASSWORD:-testpassword123}
+      - tapOn:
+          text: "Se connecter"
+      - delay: 3000
