@@ -6,12 +6,46 @@
  */
 
 import { MMKV } from 'react-native-mmkv';
+import { Platform } from 'react-native';
 import type { StateStorage } from 'zustand/middleware';
+
+/**
+ * Get MMKV encryption key with security validation
+ * - Production: REQUIRES EXPO_PUBLIC_MMKV_KEY env variable
+ * - Development: Warns if missing, uses dev-only key
+ */
+const getEncryptionKey = (): string | undefined => {
+  // Web platform doesn't support encryption
+  if (Platform.OS === 'web') {
+    return undefined;
+  }
+
+  const envKey = process.env.EXPO_PUBLIC_MMKV_KEY;
+
+  if (envKey) {
+    return envKey;
+  }
+
+  // In development, warn but allow a dev key
+  if (__DEV__) {
+    console.warn(
+      '[Storage] EXPO_PUBLIC_MMKV_KEY not set. Using dev-only key. ' +
+      'Set EXPO_PUBLIC_MMKV_KEY in .env for production!'
+    );
+    return 'dev-only-key-not-for-production';
+  }
+
+  // In production, throw error - sensitive data MUST be encrypted with proper key
+  throw new Error(
+    '[Storage] CRITICAL: EXPO_PUBLIC_MMKV_KEY must be set in production. ' +
+    'Auth tokens and sensitive data require secure encryption.'
+  );
+};
 
 // Main encrypted storage instance
 export const storage = new MMKV({
   id: 'dressing-intelligent-storage',
-  encryptionKey: process.env.EXPO_PUBLIC_MMKV_KEY || 'dev-encryption-key-change-in-prod',
+  encryptionKey: getEncryptionKey(),
 });
 
 // Zustand persist middleware storage adapter

@@ -5,27 +5,42 @@
  * @priority P1 - Foundation for app persistence
  */
 
-import { STORAGE_KEYS, zustandStorage, storageHelpers, storage } from '@/lib/storage';
+// Unmock '@/lib/storage' to test the real implementation
+// jest.setup.js mocks it globally, but we need the actual module here
+jest.unmock('@/lib/storage');
 
-// Mock MMKV
+// Create a shared store that persists across mock instances
+const mockStore = new Map<string, string>();
+
+// Mock MMKV with a persistent store
 jest.mock('react-native-mmkv', () => {
-  const store = new Map<string, string>();
   return {
     MMKV: jest.fn().mockImplementation(() => ({
-      getString: jest.fn((key: string) => store.get(key)),
-      set: jest.fn((key: string, value: string) => store.set(key, value)),
-      delete: jest.fn((key: string) => store.delete(key)),
-      contains: jest.fn((key: string) => store.has(key)),
-      clearAll: jest.fn(() => store.clear()),
-      getAllKeys: jest.fn(() => Array.from(store.keys())),
+      getString: (key: string) => mockStore.get(key),
+      set: (key: string, value: string) => { mockStore.set(key, value); },
+      delete: (key: string) => { mockStore.delete(key); },
+      contains: (key: string) => mockStore.has(key),
+      clearAll: () => { mockStore.clear(); },
+      getAllKeys: () => Array.from(mockStore.keys()),
     })),
   };
 });
 
+// Mock Platform for encryption key logic
+jest.mock('react-native', () => ({
+  Platform: { OS: 'ios' },
+}));
+
+// Set dev environment for storage initialization
+(global as any).__DEV__ = true;
+
+import { STORAGE_KEYS, zustandStorage, storageHelpers, storage } from '@/lib/storage';
+
 describe('Storage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    storage.clearAll();
+    // Clear the mock store directly to ensure clean state between tests
+    mockStore.clear();
   });
 
   describe('STORAGE_KEYS', () => {

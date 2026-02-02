@@ -171,6 +171,7 @@ jest.mock('@/lib/supabase', () => ({
       signOut: jest.fn().mockResolvedValue({ error: null }),
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
       getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      setSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
@@ -182,6 +183,50 @@ jest.mock('@/lib/supabase', () => ({
     })),
   },
   isSupabaseConfigured: jest.fn().mockReturnValue(true),
+}));
+
+// Mock react-native-mmkv (Story 0-3, 1.3)
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn().mockImplementation(() => ({
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    contains: jest.fn().mockReturnValue(false),
+    clearAll: jest.fn(),
+    getAllKeys: jest.fn().mockReturnValue([]),
+  })),
+}));
+
+// Mock lib/storage module (Story 0-3, 1.3)
+jest.mock('@/lib/storage', () => ({
+  storage: {
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    contains: jest.fn().mockReturnValue(false),
+    clearAll: jest.fn(),
+    getAllKeys: jest.fn().mockReturnValue([]),
+  },
+  STORAGE_KEYS: {
+    AUTH_STATE: 'auth-state',
+    PROFILE_STATE: 'profile-state',
+    SETTINGS_STATE: 'settings-state',
+    WARDROBE_CACHE: 'wardrobe-cache',
+    RECOMMENDATIONS_CACHE: 'recommendations-cache',
+    LAST_SYNC: 'last-sync',
+  },
+  storageHelpers: {
+    getJSON: jest.fn().mockReturnValue(null),
+    setJSON: jest.fn(),
+    has: jest.fn().mockReturnValue(false),
+    clearAll: jest.fn(),
+    getAllKeys: jest.fn().mockReturnValue([]),
+  },
+  zustandStorage: {
+    getItem: jest.fn().mockReturnValue(null),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  },
 }));
 
 // Global test timeout

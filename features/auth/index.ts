@@ -21,3 +21,4 @@ export { authService } from './services/authService';
 export { WelcomeScreen } from './components/WelcomeScreen';
 export { SignupScreen } from './components/SignupScreen';
 export { VerifyEmailScreen } from './components/VerifyEmailScreen';
+export { LoginScreen } from './components/LoginScreen';
