@@ -2,12 +2,17 @@
  * Stores - Centralized State Management
  *
  * All Zustand stores with MMKV persistence for the Dressing Intelligent app.
+ *
+ * NOTE: Profile store is now managed in features/profiles/stores/useProfileStore.ts
+ * Import it from '@/features/profiles' for profile-related state.
  */
 
 // Import stores for internal use
 import { useAuthStore } from './auth.store';
-import { useProfileStore } from './profile.store';
 import { useSettingsStore } from './settings.store';
+
+// Import profile store from features (Story 1.5 consolidation)
+import { useProfileStore } from '@/features/profiles';
 
 // Auth store
 export {
@@ -22,20 +27,9 @@ export {
   type AuthStore,
 } from './auth.store';
 
-// Profile store
-export {
-  useProfileStore,
-  useProfiles,
-  useActiveProfile,
-  useActiveProfileId,
-  useProfileLoading,
-  useProfileSwitching,
-  useCanAddProfile,
-  MAX_PROFILES,
-  type ProfileState,
-  type ProfileActions,
-  type ProfileStore,
-} from './profile.store';
+// Profile store - re-exported from features/profiles (Story 1.5)
+// For full profile data, use TanStack Query hooks from '@/features/profiles'
+export { useProfileStore };
 
 // Settings store
 export {

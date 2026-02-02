@@ -32,7 +32,7 @@ export const useRequireProfile = (enabled = true) => {
   const router = useRouter();
   const { data: profiles, isLoading, isError } = useProfiles(undefined, enabled);
 
-  const hasProfile = profiles && profiles.length > 0;
+  const hasProfile = !!(profiles && profiles.length > 0);
 
   useEffect(() => {
     // Only redirect when we have data and user has no profile

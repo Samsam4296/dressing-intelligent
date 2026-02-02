@@ -38,7 +38,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { AvatarPicker } from './AvatarPicker';
-import { useCreateProfile, useUploadAvatar } from '../hooks/useProfiles';
+import { useCreateProfile, useUploadAvatar, useUpdateProfile } from '../hooks/useProfiles';
 import { useProfileStore } from '../stores/useProfileStore';
 import { validateProfileName } from '../types/profile.types';
 import { logger } from '@/lib/logger';
@@ -105,6 +105,7 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
   // Mutations
   const { mutateAsync: createProfile, isPending: isCreating } = useCreateProfile();
   const { mutateAsync: uploadAvatar, isPending: isUploading } = useUploadAvatar();
+  const { mutateAsync: updateProfile } = useUpdateProfile();
 
   // Store actions
   const setCurrentProfile = useProfileStore((state) => state.setCurrentProfile);
@@ -170,10 +171,13 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
             imageUri: avatarUri,
           });
 
-          // If avatar upload succeeded but we got a signed URL, we could update profile
-          // For now, avatar_url is updated separately or on next fetch
-          if (avatarResult?.signedUrl) {
-            logger.info('Avatar uploaded', { feature: 'profiles' });
+          // Update profile with the storage path so avatar can be retrieved later
+          if (avatarResult?.storagePath) {
+            await updateProfile({
+              profileId: profile.id,
+              updates: { avatarUrl: avatarResult.storagePath },
+            });
+            logger.info('Avatar uploaded and profile updated', { feature: 'profiles' });
           }
         } catch (avatarError) {
           // Log but don't fail profile creation for avatar upload failure

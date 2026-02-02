@@ -237,5 +237,50 @@ jest.mock('@/lib/storage', () => ({
   },
 }));
 
+// Mock expo-image-picker (Story 1.5)
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true }),
+  launchCameraAsync: jest.fn().mockResolvedValue({ canceled: true }),
+  MediaTypeOptions: {
+    Images: 'Images',
+    Videos: 'Videos',
+    All: 'All',
+  },
+}));
+
+// Mock expo-image-manipulator (Story 1.5)
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'compressed-uri.jpg' }),
+  SaveFormat: {
+    JPEG: 'jpeg',
+    PNG: 'png',
+    WEBP: 'webp',
+  },
+}));
+
+// Mock expo-linking
+jest.mock('expo-linking', () => ({
+  openSettings: jest.fn(),
+  openURL: jest.fn(),
+  canOpenURL: jest.fn().mockResolvedValue(true),
+}));
+
+// Mock @react-native-community/netinfo (Story 1.5)
+jest.mock('@react-native-community/netinfo', () => ({
+  fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
+  addEventListener: jest.fn(() => jest.fn()),
+  useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true })),
+}));
+
+// Mock react-native-keyboard-aware-scroll-view (Story 1.5)
+jest.mock('react-native-keyboard-aware-scroll-view', () => ({
+  KeyboardAwareScrollView: 'KeyboardAwareScrollView',
+}));
+
+// Note: react-native-mmkv is mocked locally in storage.test.ts
+// Global mock removed to avoid conflicts with test-specific mocks
+
 // Global test timeout
 jest.setTimeout(10000);
