@@ -84,10 +84,13 @@ export const useAuth = (): AuthState => {
             setUser(data.user);
 
             // Update stored session with refreshed tokens
-            storage.set(STORAGE_KEYS.AUTH_STATE, JSON.stringify({
-              session: data.session,
-              user: data.user,
-            }));
+            storage.set(
+              STORAGE_KEYS.AUTH_STATE,
+              JSON.stringify({
+                session: data.session,
+                user: data.user,
+              })
+            );
 
             Sentry.addBreadcrumb({
               category: 'auth',
@@ -97,7 +100,9 @@ export const useAuth = (): AuthState => {
           }
         } else {
           // No stored session, try to get current session from Supabase
-          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          const {
+            data: { session: currentSession },
+          } = await supabase.auth.getSession();
           if (currentSession && isMounted) {
             setSession(currentSession);
             setUser(currentSession.user);
@@ -122,65 +127,68 @@ export const useAuth = (): AuthState => {
      * - JWT refresh before 1h expiration
      * - Session token updates
      */
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
-        if (!isMounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!isMounted) return;
 
-        // Update state
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+      // Update state
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
 
-        // Persist to MMKV (AC#3)
-        if (newSession) {
-          storage.set(STORAGE_KEYS.AUTH_STATE, JSON.stringify({
+      // Persist to MMKV (AC#3)
+      if (newSession) {
+        storage.set(
+          STORAGE_KEYS.AUTH_STATE,
+          JSON.stringify({
             session: newSession,
             user: newSession.user,
-          }));
-        } else {
-          storage.delete(STORAGE_KEYS.AUTH_STATE);
-        }
-
-        // Log auth events for debugging
-        Sentry.addBreadcrumb({
-          category: 'auth',
-          message: `Auth state change: ${event}`,
-          level: 'info',
-          data: { hasSession: !!newSession },
-        });
-
-        // Handle specific events
-        switch (event) {
-          case 'SIGNED_IN':
-            Sentry.addBreadcrumb({
-              category: 'auth',
-              message: 'User signed in',
-              level: 'info',
-            });
-            break;
-          case 'SIGNED_OUT':
-            Sentry.addBreadcrumb({
-              category: 'auth',
-              message: 'User signed out',
-              level: 'info',
-            });
-            break;
-          case 'TOKEN_REFRESHED':
-            Sentry.addBreadcrumb({
-              category: 'auth',
-              message: 'Token refreshed automatically',
-              level: 'info',
-            });
-            break;
-          case 'USER_UPDATED':
-            Sentry.addBreadcrumb({
-              category: 'auth',
-              message: 'User profile updated',
-              level: 'info',
-            });
-            break;
-        }
+          })
+        );
+      } else {
+        storage.delete(STORAGE_KEYS.AUTH_STATE);
       }
-    );
+
+      // Log auth events for debugging
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: `Auth state change: ${event}`,
+        level: 'info',
+        data: { hasSession: !!newSession },
+      });
+
+      // Handle specific events
+      switch (event) {
+        case 'SIGNED_IN':
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: 'User signed in',
+            level: 'info',
+          });
+          break;
+        case 'SIGNED_OUT':
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: 'User signed out',
+            level: 'info',
+          });
+          break;
+        case 'TOKEN_REFRESHED':
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: 'Token refreshed automatically',
+            level: 'info',
+          });
+          break;
+        case 'USER_UPDATED':
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: 'User profile updated',
+            level: 'info',
+          });
+          break;
+      }
+    });
 
     // Cleanup subscription on unmount
     return () => {

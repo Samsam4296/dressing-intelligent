@@ -17,10 +17,16 @@ jest.mock('react-native-mmkv', () => {
   return {
     MMKV: jest.fn().mockImplementation(() => ({
       getString: (key: string) => mockStore.get(key),
-      set: (key: string, value: string) => { mockStore.set(key, value); },
-      delete: (key: string) => { mockStore.delete(key); },
+      set: (key: string, value: string) => {
+        mockStore.set(key, value);
+      },
+      delete: (key: string) => {
+        mockStore.delete(key);
+      },
       contains: (key: string) => mockStore.has(key),
-      clearAll: () => { mockStore.clear(); },
+      clearAll: () => {
+        mockStore.clear();
+      },
       getAllKeys: () => Array.from(mockStore.keys()),
     })),
   };

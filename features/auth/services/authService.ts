@@ -17,7 +17,10 @@ import * as Sentry from '@sentry/react-native';
 /**
  * Map Supabase auth error codes to user-friendly French messages for SignUp
  */
-const mapSignUpError = (error: { message: string; status?: number }): { code: string; message: string } => {
+const mapSignUpError = (error: {
+  message: string;
+  status?: number;
+}): { code: string; message: string } => {
   const message = error.message.toLowerCase();
 
   // Email related errors
@@ -69,7 +72,10 @@ const mapSignUpError = (error: { message: string; status?: number }): { code: st
 /**
  * Map Supabase auth error codes to user-friendly French messages for SignIn (AC#5)
  */
-const mapSignInError = (error: { message: string; status?: number }): { code: string; message: string } => {
+const mapSignInError = (error: {
+  message: string;
+  status?: number;
+}): { code: string; message: string } => {
   const message = error.message.toLowerCase();
 
   // Invalid credentials (AC#5 - email inconnu, mot de passe incorrect)
@@ -97,7 +103,11 @@ const mapSignInError = (error: { message: string; status?: number }): { code: st
   }
 
   // Too many requests / Rate limiting (NFR-S7)
-  if (message.includes('too many requests') || message.includes('rate limit') || error.status === 429) {
+  if (
+    message.includes('too many requests') ||
+    message.includes('rate limit') ||
+    error.status === 429
+  ) {
     return {
       code: 'RATE_LIMITED',
       message: 'Trop de tentatives. Veuillez réessayer dans quelques minutes',
@@ -141,7 +151,7 @@ export const authService = {
     if (!isSupabaseConfigured()) {
       const configError = {
         code: 'CONFIG_ERROR',
-        message: 'Le service d\'authentification n\'est pas configuré',
+        message: "Le service d'authentification n'est pas configuré",
       };
       Sentry.captureMessage('Supabase not configured for signup', {
         level: 'warning',
@@ -251,10 +261,13 @@ export const authService = {
 
       // Store session in MMKV with AES-256 encryption (AC#3)
       if (data.session) {
-        storage.set(STORAGE_KEYS.AUTH_STATE, JSON.stringify({
-          session: data.session,
-          user: data.user,
-        }));
+        storage.set(
+          STORAGE_KEYS.AUTH_STATE,
+          JSON.stringify({
+            session: data.session,
+            user: data.user,
+          })
+        );
 
         Sentry.addBreadcrumb({
           category: 'auth',

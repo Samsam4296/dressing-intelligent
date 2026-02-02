@@ -132,7 +132,9 @@ describe('Auth Feature - Services and Types for LoginScreen', () => {
 
       // Verify messages are in French (contain French characters/words)
       Object.values(errorMessages).forEach((message) => {
-        expect(message).toMatch(/[éèêëàâùûîïôç]|[Vv]euillez|connexion|utilisé|compte|incorrect|tentatives|erreur/i);
+        expect(message).toMatch(
+          /[éèêëàâùûîïôç]|[Vv]euillez|connexion|utilisé|compte|incorrect|tentatives|erreur/i
+        );
       });
     });
   });

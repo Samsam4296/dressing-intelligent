@@ -6,7 +6,7 @@
     "sdkVersion": "54.0.0",
 
     "scheme": "dressing-intelligent",
-    "platforms": ["ios", "android"],
+    "platforms": ["ios", "android", "web"],
     "web": {
       "bundler": "metro",
       "output": "static",

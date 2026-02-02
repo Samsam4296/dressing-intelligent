@@ -232,10 +232,7 @@ describe('authService', () => {
         password: 'TestPassword123',
       });
 
-      expect(storage.set).toHaveBeenCalledWith(
-        STORAGE_KEYS.AUTH_STATE,
-        expect.any(String)
-      );
+      expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE, expect.any(String));
     });
 
     it('returns CONFIG_ERROR when Supabase is not configured', async () => {
@@ -409,9 +406,7 @@ describe('authService', () => {
     });
 
     it('returns UNEXPECTED_ERROR on exception', async () => {
-      (supabase.auth.signOut as jest.Mock).mockRejectedValue(
-        new Error('Unexpected error')
-      );
+      (supabase.auth.signOut as jest.Mock).mockRejectedValue(new Error('Unexpected error'));
 
       const { authService } = require('../authService');
       const result = await authService.signOut();

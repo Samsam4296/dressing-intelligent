@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
   return (
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="mb-4 text-2xl font-bold text-gray-900 dark:text-white text-center">
+        <Text className="mb-4 text-center text-2xl font-bold text-gray-900 dark:text-white">
           Mot de passe oublié
         </Text>
         <Text className="mb-8 px-8 text-center text-gray-600 dark:text-gray-400">
@@ -34,11 +34,8 @@ export default function ForgotPasswordPage() {
           onPress={handleBackPress}
           accessibilityRole="button"
           accessibilityLabel="Retour à la connexion"
-          className="min-h-[44px] px-6 py-3 bg-blue-600 dark:bg-blue-500 rounded-lg"
-        >
-          <Text className="text-white font-semibold">
-            Retour à la connexion
-          </Text>
+          className="min-h-[44px] rounded-lg bg-blue-600 px-6 py-3 dark:bg-blue-500">
+          <Text className="font-semibold text-white">Retour à la connexion</Text>
         </Pressable>
       </View>
     </SafeAreaView>

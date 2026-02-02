@@ -260,7 +260,7 @@ describe('Settings Store', () => {
       useSettingsStore.getState().setLocation({
         city: 'Lyon',
         latitude: 45.7578,
-        longitude: 4.8320,
+        longitude: 4.832,
         useGeolocation: false,
       });
       useSettingsStore.getState().setNotificationsEnabled(false);

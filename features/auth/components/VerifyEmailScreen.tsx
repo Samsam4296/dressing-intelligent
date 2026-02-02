@@ -37,7 +37,9 @@ export const VerifyEmailScreen: React.FC = () => {
 
     try {
       // Get the current session to retrieve the user's email
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (session?.user?.email) {
         const { error } = await supabase.auth.resend({
@@ -46,7 +48,7 @@ export const VerifyEmailScreen: React.FC = () => {
         });
 
         if (error) {
-          setResendMessage('Erreur lors de l\'envoi. Veuillez réessayer.');
+          setResendMessage("Erreur lors de l'envoi. Veuillez réessayer.");
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         } else {
           setResendMessage('Email envoyé avec succès !');
@@ -68,31 +70,26 @@ export const VerifyEmailScreen: React.FC = () => {
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <Animated.View
         entering={FadeIn.duration(500)}
-        className="flex-1 justify-center items-center px-6"
-      >
+        className="flex-1 items-center justify-center px-6">
         {/* Email Icon */}
-        <View className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/30 items-center justify-center mb-8">
-          <Ionicons
-            name="mail-outline"
-            size={48}
-            color={isDark ? '#60A5FA' : '#2563EB'}
-          />
+        <View className="mb-8 h-24 w-24 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+          <Ionicons name="mail-outline" size={48} color={isDark ? '#60A5FA' : '#2563EB'} />
         </View>
 
         {/* Title */}
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-4">
+        <Text className="mb-4 text-center text-2xl font-bold text-gray-900 dark:text-white">
           Vérifiez votre email
         </Text>
 
         {/* Description */}
-        <Text className="text-base text-gray-600 dark:text-gray-400 text-center mb-8 px-4">
+        <Text className="mb-8 px-4 text-center text-base text-gray-600 dark:text-gray-400">
           Nous vous avons envoyé un email de vérification. Cliquez sur le lien dans le message pour
           activer votre compte.
         </Text>
 
         {/* Info Box */}
-        <View className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-8 w-full">
-          <Text className="text-sm text-blue-800 dark:text-blue-200 text-center">
+        <View className="mb-8 w-full rounded-xl bg-blue-50 p-4 dark:bg-blue-900/20">
+          <Text className="text-center text-sm text-blue-800 dark:text-blue-200">
             Pensez à vérifier votre dossier spam si vous ne trouvez pas le message.
           </Text>
         </View>
@@ -100,12 +97,11 @@ export const VerifyEmailScreen: React.FC = () => {
         {/* Resend Status Message */}
         {resendMessage && (
           <Text
-            className={`text-sm text-center mb-4 ${
+            className={`mb-4 text-center text-sm ${
               resendMessage.includes('succès')
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-red-500'
-            }`}
-          >
+            }`}>
             {resendMessage}
           </Text>
         )}
@@ -117,8 +113,7 @@ export const VerifyEmailScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel="Renvoyer l'email de vérification"
           accessibilityState={{ disabled: isResending }}
-          className="min-h-[44px] items-center justify-center mb-4"
-        >
+          className="mb-4 min-h-[44px] items-center justify-center">
           {isResending ? (
             <ActivityIndicator size="small" color={isDark ? '#60A5FA' : '#2563EB'} />
           ) : (
@@ -133,11 +128,8 @@ export const VerifyEmailScreen: React.FC = () => {
           onPress={handleBackToLogin}
           accessibilityRole="button"
           accessibilityLabel="Retourner à la page de connexion"
-          className="min-h-[56px] w-full items-center justify-center rounded-2xl bg-blue-600 dark:bg-blue-500"
-        >
-          <Text className="text-lg font-semibold text-white">
-            Retour à la connexion
-          </Text>
+          className="min-h-[56px] w-full items-center justify-center rounded-2xl bg-blue-600 dark:bg-blue-500">
+          <Text className="text-lg font-semibold text-white">Retour à la connexion</Text>
         </Pressable>
       </Animated.View>
     </SafeAreaView>

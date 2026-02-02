@@ -30,10 +30,7 @@ export const createMockProfile = (overrides: Partial<Profile> = {}): Profile => 
 /**
  * Create multiple mock profiles
  */
-export const createMockProfiles = (
-  count: number,
-  overrides: Partial<Profile> = {}
-): Profile[] => {
+export const createMockProfiles = (count: number, overrides: Partial<Profile> = {}): Profile[] => {
   return Array.from({ length: count }, () => createMockProfile(overrides));
 };
 

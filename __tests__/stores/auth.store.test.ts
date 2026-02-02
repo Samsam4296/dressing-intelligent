@@ -6,11 +6,7 @@
  */
 
 import { useAuthStore } from '@/stores/auth.store';
-import {
-  createMockUser,
-  createMockSession,
-  resetUserFactory,
-} from '../support/factories';
+import { createMockUser, createMockSession, resetUserFactory } from '../support/factories';
 
 // Mock storage
 jest.mock('@/lib/storage', () => ({

@@ -100,25 +100,24 @@ const PasswordStrengthIndicator: React.FC<{
 
   return (
     <View className="mt-2">
-      <View className="flex-row h-1 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
+      <View className="h-1 flex-row overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         {[0, 1, 2, 3].map((i) => (
           <View
             key={i}
-            className={`flex-1 mx-0.5 rounded-full ${
+            className={`mx-0.5 flex-1 rounded-full ${
               i <= score ? getStrengthColor(strength) : 'bg-transparent'
             }`}
           />
         ))}
       </View>
       <Text
-        className={`text-xs mt-1 ${
+        className={`mt-1 text-xs ${
           strength === 'weak'
             ? 'text-red-500'
             : strength === 'medium'
-            ? 'text-yellow-600 dark:text-yellow-400'
-            : 'text-green-600 dark:text-green-400'
-        }`}
-      >
+              ? 'text-yellow-600 dark:text-yellow-400'
+              : 'text-green-600 dark:text-green-400'
+        }`}>
         {getStrengthLabel(strength)}
       </Text>
     </View>
@@ -161,20 +160,17 @@ export const SignupScreen: React.FC = () => {
   const confirmShake = useSharedValue(0);
 
   // Shake animation for validation errors (AC#6)
-  const triggerShake = useCallback(
-    (shakeValue: Animated.SharedValue<number>) => {
-      shakeValue.value = withSequence(
-        withTiming(-10, { duration: 50 }),
-        withTiming(10, { duration: 50 }),
-        withTiming(-8, { duration: 50 }),
-        withTiming(8, { duration: 50 }),
-        withTiming(-4, { duration: 50 }),
-        withTiming(4, { duration: 50 }),
-        withTiming(0, { duration: 50 })
-      );
-    },
-    []
-  );
+  const triggerShake = useCallback((shakeValue: Animated.SharedValue<number>) => {
+    shakeValue.value = withSequence(
+      withTiming(-10, { duration: 50 }),
+      withTiming(10, { duration: 50 }),
+      withTiming(-8, { duration: 50 }),
+      withTiming(8, { duration: 50 }),
+      withTiming(-4, { duration: 50 }),
+      withTiming(4, { duration: 50 }),
+      withTiming(0, { duration: 50 })
+    );
+  }, []);
 
   // Check if form is valid for submission
   const isFormValid = useCallback(() => {
@@ -215,49 +211,58 @@ export const SignupScreen: React.FC = () => {
   }, [form.password, form.confirmPassword]);
 
   // Handle form field changes with real-time validation
-  const handleEmailChange = useCallback((text: string) => {
-    setForm((prev) => ({ ...prev, email: text }));
-    // Clear error when user starts typing
-    if (touched.email) {
-      const result = validateEmail(text);
-      setErrors((prev) => ({
-        ...prev,
-        email: result.isValid ? null : result.errors[0],
-      }));
-    }
-  }, [touched.email]);
+  const handleEmailChange = useCallback(
+    (text: string) => {
+      setForm((prev) => ({ ...prev, email: text }));
+      // Clear error when user starts typing
+      if (touched.email) {
+        const result = validateEmail(text);
+        setErrors((prev) => ({
+          ...prev,
+          email: result.isValid ? null : result.errors[0],
+        }));
+      }
+    },
+    [touched.email]
+  );
 
-  const handlePasswordChange = useCallback((text: string) => {
-    setForm((prev) => ({ ...prev, password: text }));
-    // Validate password in real-time if touched
-    if (touched.password) {
-      const result = validatePassword(text);
-      setErrors((prev) => ({
-        ...prev,
-        password: result.errors.length > 0 ? result.errors : null,
-      }));
-    }
-    // Re-validate confirm password if it exists
-    if (form.confirmPassword && touched.confirmPassword) {
-      const confirmResult = validateConfirmPassword(text, form.confirmPassword);
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword: confirmResult.errors[0] || null,
-      }));
-    }
-  }, [touched.password, touched.confirmPassword, form.confirmPassword]);
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      setForm((prev) => ({ ...prev, password: text }));
+      // Validate password in real-time if touched
+      if (touched.password) {
+        const result = validatePassword(text);
+        setErrors((prev) => ({
+          ...prev,
+          password: result.errors.length > 0 ? result.errors : null,
+        }));
+      }
+      // Re-validate confirm password if it exists
+      if (form.confirmPassword && touched.confirmPassword) {
+        const confirmResult = validateConfirmPassword(text, form.confirmPassword);
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: confirmResult.errors[0] || null,
+        }));
+      }
+    },
+    [touched.password, touched.confirmPassword, form.confirmPassword]
+  );
 
-  const handleConfirmPasswordChange = useCallback((text: string) => {
-    setForm((prev) => ({ ...prev, confirmPassword: text }));
-    // Validate confirm password in real-time
-    if (touched.confirmPassword || text.length > 0) {
-      const result = validateConfirmPassword(form.password, text);
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword: result.errors[0] || null,
-      }));
-    }
-  }, [form.password, touched.confirmPassword]);
+  const handleConfirmPasswordChange = useCallback(
+    (text: string) => {
+      setForm((prev) => ({ ...prev, confirmPassword: text }));
+      // Validate confirm password in real-time
+      if (touched.confirmPassword || text.length > 0) {
+        const result = validateConfirmPassword(form.password, text);
+        setErrors((prev) => ({
+          ...prev,
+          confirmPassword: result.errors[0] || null,
+        }));
+      }
+    },
+    [form.password, touched.confirmPassword]
+  );
 
   // Handle blur events to mark fields as touched
   const handleEmailBlur = useCallback(() => {
@@ -362,10 +367,13 @@ export const SignupScreen: React.FC = () => {
         return;
       }
 
-      // Success - navigate to verify email screen
+      // Success - clear sensitive data from state (NFR-S6) and navigate
+      setForm((prev) => ({ ...prev, password: '', confirmPassword: '' }));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.push('/(auth)/verify-email');
-    } catch {
+    } catch (err) {
+      // Log error for debugging (no PII logged)
+      console.error('Signup error:', err instanceof Error ? err.message : 'Unknown error');
       setErrors((prev) => ({
         ...prev,
         general: 'Une erreur inattendue est survenue',
@@ -374,7 +382,18 @@ export const SignupScreen: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateEmailField, validatePasswordField, validateConfirmField, router, form.email, form.password, triggerShake, emailShake, passwordShake, confirmShake]);
+  }, [
+    validateEmailField,
+    validatePasswordField,
+    validateConfirmField,
+    router,
+    form.email,
+    form.password,
+    triggerShake,
+    emailShake,
+    passwordShake,
+    confirmShake,
+  ]);
 
   const placeholderColor = isDark ? '#9CA3AF' : '#6B7280';
 
@@ -382,23 +401,20 @@ export const SignupScreen: React.FC = () => {
     <SafeAreaView className="flex-1 bg-white dark:bg-gray-900">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        className="flex-1"
-      >
+        className="flex-1">
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <Animated.View
             entering={FadeIn.duration(500)}
-            className="flex-1 justify-center px-6 py-8"
-          >
+            className="flex-1 justify-center px-6 py-8">
             {/* Header */}
             <View className="mb-8 items-center">
-              <Text className="text-3xl font-bold text-gray-900 dark:text-white text-center">
+              <Text className="text-center text-3xl font-bold text-gray-900 dark:text-white">
                 Créer un compte
               </Text>
-              <Text className="mt-2 text-base text-gray-600 dark:text-gray-400 text-center">
+              <Text className="mt-2 text-center text-base text-gray-600 dark:text-gray-400">
                 Rejoignez Dressing Intelligent
               </Text>
             </View>
@@ -407,11 +423,11 @@ export const SignupScreen: React.FC = () => {
             <View className="space-y-4">
               {/* Email Field */}
               <AnimatedView style={emailShakeStyle}>
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <Text className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email
                 </Text>
                 <TextInput
-                  className={`h-12 px-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white ${
+                  className={`h-12 rounded-lg bg-gray-100 px-4 text-gray-900 dark:bg-gray-800 dark:text-white ${
                     touched.email && errors.email ? 'border border-red-500' : ''
                   }`}
                   placeholder="votreemail@exemple.com"
@@ -426,18 +442,18 @@ export const SignupScreen: React.FC = () => {
                   accessibilityLabel="Adresse email"
                 />
                 {touched.email && errors.email && (
-                  <Text className="text-sm text-red-500 mt-1">{errors.email}</Text>
+                  <Text className="mt-1 text-sm text-red-500">{errors.email}</Text>
                 )}
               </AnimatedView>
 
               {/* Password Field */}
               <AnimatedView style={passwordShakeStyle} className="mt-4">
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <Text className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Mot de passe
                 </Text>
                 <View className="relative">
                   <TextInput
-                    className={`h-12 px-4 pr-12 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white ${
+                    className={`h-12 rounded-lg bg-gray-100 px-4 pr-12 text-gray-900 dark:bg-gray-800 dark:text-white ${
                       touched.password && errors.password ? 'border border-red-500' : ''
                     }`}
                     placeholder="Mot de passe"
@@ -453,10 +469,11 @@ export const SignupScreen: React.FC = () => {
                   <Pressable
                     onPress={togglePasswordVisibility}
                     className="absolute right-0 top-0 h-12 w-12 items-center justify-center"
-                    accessibilityLabel={showPassword ? 'Masquer mot de passe' : 'Afficher mot de passe'}
+                    accessibilityLabel={
+                      showPassword ? 'Masquer mot de passe' : 'Afficher mot de passe'
+                    }
                     accessibilityRole="button"
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Ionicons
                       name={showPassword ? 'eye-off' : 'eye'}
                       size={24}
@@ -480,13 +497,15 @@ export const SignupScreen: React.FC = () => {
 
               {/* Confirm Password Field */}
               <AnimatedView style={confirmShakeStyle} className="mt-4">
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <Text className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Confirmer le mot de passe
                 </Text>
                 <View className="relative">
                   <TextInput
-                    className={`h-12 px-4 pr-12 bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-900 dark:text-white ${
-                      touched.confirmPassword && errors.confirmPassword ? 'border border-red-500' : ''
+                    className={`h-12 rounded-lg bg-gray-100 px-4 pr-12 text-gray-900 dark:bg-gray-800 dark:text-white ${
+                      touched.confirmPassword && errors.confirmPassword
+                        ? 'border border-red-500'
+                        : ''
                     }`}
                     placeholder="Confirmer le mot de passe"
                     placeholderTextColor={placeholderColor}
@@ -501,10 +520,11 @@ export const SignupScreen: React.FC = () => {
                   <Pressable
                     onPress={toggleConfirmPasswordVisibility}
                     className="absolute right-0 top-0 h-12 w-12 items-center justify-center"
-                    accessibilityLabel={showConfirmPassword ? 'Masquer confirmation' : 'Afficher confirmation'}
+                    accessibilityLabel={
+                      showConfirmPassword ? 'Masquer confirmation' : 'Afficher confirmation'
+                    }
                     accessibilityRole="button"
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Ionicons
                       name={showConfirmPassword ? 'eye-off' : 'eye'}
                       size={24}
@@ -513,14 +533,14 @@ export const SignupScreen: React.FC = () => {
                   </Pressable>
                 </View>
                 {touched.confirmPassword && errors.confirmPassword && (
-                  <Text className="text-sm text-red-500 mt-1">{errors.confirmPassword}</Text>
+                  <Text className="mt-1 text-sm text-red-500">{errors.confirmPassword}</Text>
                 )}
               </AnimatedView>
 
               {/* General Error Message */}
               {errors.general && (
-                <View className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                  <Text className="text-sm text-red-600 dark:text-red-400 text-center">
+                <View className="mt-4 rounded-lg bg-red-100 p-3 dark:bg-red-900/30">
+                  <Text className="text-center text-sm text-red-600 dark:text-red-400">
                     {errors.general}
                   </Text>
                 </View>
@@ -540,16 +560,14 @@ export const SignupScreen: React.FC = () => {
                   isFormValid() && !isLoading
                     ? 'bg-blue-600 dark:bg-blue-500'
                     : 'bg-gray-300 dark:bg-gray-700'
-                }`}
-              >
+                }`}>
                 {isLoading ? (
                   <ActivityIndicator color="white" />
                 ) : (
                   <Text
                     className={`text-lg font-semibold ${
                       isFormValid() ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
+                    }`}>
                     Créer mon compte
                   </Text>
                 )}
@@ -561,13 +579,10 @@ export const SignupScreen: React.FC = () => {
               onPress={handleLoginPress}
               accessibilityRole="button"
               accessibilityLabel="Se connecter à un compte existant"
-              className="mt-6 min-h-[44px] items-center justify-center"
-            >
+              className="mt-6 min-h-[44px] items-center justify-center">
               <Text className="text-base text-gray-600 dark:text-gray-400">
                 Déjà un compte ?{' '}
-                <Text className="font-semibold text-blue-600 dark:text-blue-400">
-                  Se connecter
-                </Text>
+                <Text className="font-semibold text-blue-600 dark:text-blue-400">Se connecter</Text>
               </Text>
             </Pressable>
           </Animated.View>

@@ -158,10 +158,7 @@ describe('useAuth Hook', () => {
       expect(result.current.session).toEqual(mockSession);
 
       // Verify session persisted to MMKV
-      expect(storage.set).toHaveBeenCalledWith(
-        STORAGE_KEYS.AUTH_STATE,
-        expect.any(String)
-      );
+      expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE, expect.any(String));
     });
 
     it('clears state on SIGNED_OUT event', async () => {

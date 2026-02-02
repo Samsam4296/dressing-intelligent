@@ -30,7 +30,7 @@ const getEncryptionKey = (): string | undefined => {
   if (__DEV__) {
     console.warn(
       '[Storage] EXPO_PUBLIC_MMKV_KEY not set. Using dev-only key. ' +
-      'Set EXPO_PUBLIC_MMKV_KEY in .env for production!'
+        'Set EXPO_PUBLIC_MMKV_KEY in .env for production!'
     );
     return 'dev-only-key-not-for-production';
   }
@@ -38,7 +38,7 @@ const getEncryptionKey = (): string | undefined => {
   // In production, throw error - sensitive data MUST be encrypted with proper key
   throw new Error(
     '[Storage] CRITICAL: EXPO_PUBLIC_MMKV_KEY must be set in production. ' +
-    'Auth tokens and sensitive data require secure encryption.'
+      'Auth tokens and sensitive data require secure encryption.'
   );
 };
 

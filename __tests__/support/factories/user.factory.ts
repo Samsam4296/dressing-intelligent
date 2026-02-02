@@ -37,10 +37,7 @@ export const createMockUser = (overrides: Partial<User> = {}): User => {
 /**
  * Create a mock Supabase Session object
  */
-export const createMockSession = (
-  user?: User,
-  overrides: Partial<Session> = {}
-): Session => {
+export const createMockSession = (user?: User, overrides: Partial<Session> = {}): Session => {
   const sessionUser = user || createMockUser();
   return {
     access_token: `access-token-${sessionCounter++}`,
