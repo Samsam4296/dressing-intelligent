@@ -479,9 +479,25 @@ export const authService = {
           extra: { errorCode: error.status },
         });
 
+        const mappedError = mapPasswordResetError(error);
+
+        // SECURITY: Prevent user enumeration - return success even if user not found
+        // This prevents attackers from discovering which emails are registered
+        if (mappedError.code === 'USER_NOT_FOUND') {
+          Sentry.addBreadcrumb({
+            category: 'auth',
+            message: 'Password reset requested for non-existent user (anti-enumeration)',
+            level: 'info',
+          });
+          return {
+            data: { message: 'Email envoyé avec succès' },
+            error: null,
+          };
+        }
+
         return {
           data: null,
-          error: mapPasswordResetError(error),
+          error: mappedError,
         };
       }
 
