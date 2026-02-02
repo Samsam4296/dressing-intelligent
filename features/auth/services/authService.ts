@@ -3,6 +3,7 @@
  * API calls for authentication operations
  * Story 1.2: Sign Up implementation with Supabase Auth
  * Story 1.3: Sign In implementation with Supabase Auth
+ * Story 1.4: Password Reset implementation with Supabase Auth
  *
  * CRITICAL: Sentry logging per project-context.md:
  * - Log errors BEFORE return: Sentry.captureException(error, { tags: {...} })
@@ -134,6 +135,91 @@ const mapSignInError = (error: {
   return {
     code: 'SIGNIN_ERROR',
     message: 'Une erreur est survenue lors de la connexion',
+  };
+};
+
+/**
+ * Map Supabase auth error codes to user-friendly French messages for Password Reset (AC#8)
+ * Story 1.4: Réinitialisation Mot de Passe
+ */
+const mapPasswordResetError = (error: {
+  message: string;
+  status?: number;
+}): { code: string; message: string } => {
+  const message = error.message.toLowerCase();
+
+  // User not found
+  if (message.includes('user not found') || message.includes('no user found')) {
+    return {
+      code: 'USER_NOT_FOUND',
+      message: 'Aucun compte trouvé avec cet email',
+    };
+  }
+
+  // Rate limiting
+  if (
+    message.includes('rate limit') ||
+    message.includes('too many requests') ||
+    error.status === 429
+  ) {
+    return {
+      code: 'RATE_LIMITED',
+      message: 'Trop de demandes. Veuillez réessayer dans quelques minutes.',
+    };
+  }
+
+  // Invalid email format
+  if (message.includes('invalid email')) {
+    return {
+      code: 'INVALID_EMAIL',
+      message: 'Format email invalide',
+    };
+  }
+
+  // Token expired (for confirm password reset)
+  if (message.includes('expired') || message.includes('token')) {
+    return {
+      code: 'TOKEN_EXPIRED',
+      message: 'Le lien a expiré. Veuillez demander un nouveau lien.',
+    };
+  }
+
+  // Session missing (for confirm password reset)
+  if (message.includes('session') || message.includes('not authenticated')) {
+    return {
+      code: 'SESSION_MISSING',
+      message: 'Session expirée. Veuillez redemander un lien de réinitialisation.',
+    };
+  }
+
+  // Password too weak
+  if (message.includes('password') && (message.includes('weak') || message.includes('short'))) {
+    return {
+      code: 'WEAK_PASSWORD',
+      message: 'Le mot de passe doit contenir au moins 8 caractères',
+    };
+  }
+
+  // Same password
+  if (message.includes('same password') || message.includes('different')) {
+    return {
+      code: 'SAME_PASSWORD',
+      message: "Le nouveau mot de passe doit être différent de l'ancien",
+    };
+  }
+
+  // Network errors
+  if (message.includes('network') || message.includes('fetch')) {
+    return {
+      code: 'NETWORK_ERROR',
+      message: 'Erreur de connexion. Vérifiez votre connexion internet.',
+    };
+  }
+
+  // Default error
+  return {
+    code: 'PASSWORD_RESET_ERROR',
+    message: 'Une erreur est survenue. Veuillez réessayer.',
   };
 };
 
@@ -344,6 +430,148 @@ export const authService = {
     } catch (err) {
       Sentry.captureException(err, {
         tags: { feature: 'auth', action: 'signout' },
+      });
+
+      return {
+        data: null,
+        error: {
+          code: 'UNEXPECTED_ERROR',
+          message: 'Une erreur inattendue est survenue',
+        },
+      };
+    }
+  },
+
+  /**
+   * Request password reset email (Story 1.4)
+   * @param email - User's email address
+   * @returns AuthResponse with success message or error
+   *
+   * AC#1: Send password reset email with link
+   * AC#2: Link expires after 1 hour (handled by Supabase)
+   * AC#8: Clear error messages in French (unknown email, invalid format)
+   */
+  async requestPasswordReset(email: string): Promise<AuthResponse<{ message: string }>> {
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      const configError = {
+        code: 'CONFIG_ERROR',
+        message: "Le service d'authentification n'est pas configuré",
+      };
+      Sentry.captureMessage('Supabase not configured for password reset', {
+        level: 'warning',
+        tags: { feature: 'auth', action: 'requestPasswordReset' },
+      });
+      return { data: null, error: configError };
+    }
+
+    try {
+      // Call Supabase resetPasswordForEmail
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        // Deep link to the reset-password page in the app
+        redirectTo: 'dressing-intelligent://reset-password',
+      });
+
+      if (error) {
+        // Log to Sentry before returning (no PII - GDPR compliant)
+        Sentry.captureException(error, {
+          tags: { feature: 'auth', action: 'requestPasswordReset' },
+          extra: { errorCode: error.status },
+        });
+
+        return {
+          data: null,
+          error: mapPasswordResetError(error),
+        };
+      }
+
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Password reset email sent',
+        level: 'info',
+      });
+
+      return {
+        data: { message: 'Email envoyé avec succès' },
+        error: null,
+      };
+    } catch (err) {
+      // Log unexpected errors to Sentry (no PII)
+      Sentry.captureException(err, {
+        tags: { feature: 'auth', action: 'requestPasswordReset' },
+      });
+
+      return {
+        data: null,
+        error: {
+          code: 'UNEXPECTED_ERROR',
+          message: 'Une erreur inattendue est survenue',
+        },
+      };
+    }
+  },
+
+  /**
+   * Confirm password reset with new password (Story 1.4)
+   * @param newPassword - The new password to set
+   * @returns AuthResponse with success message or error
+   *
+   * AC#3: New password must meet security criteria (8 chars min, uppercase, lowercase, digit)
+   * AC#4: All existing sessions invalidated after password change
+   */
+  async confirmPasswordReset(newPassword: string): Promise<AuthResponse<{ message: string }>> {
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      const configError = {
+        code: 'CONFIG_ERROR',
+        message: "Le service d'authentification n'est pas configuré",
+      };
+      Sentry.captureMessage('Supabase not configured for password reset confirmation', {
+        level: 'warning',
+        tags: { feature: 'auth', action: 'confirmPasswordReset' },
+      });
+      return { data: null, error: configError };
+    }
+
+    try {
+      // Supabase handles the token from the session restored via deep link
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        // Log to Sentry before returning (no PII)
+        Sentry.captureException(error, {
+          tags: { feature: 'auth', action: 'confirmPasswordReset' },
+          extra: { errorCode: error.status },
+        });
+
+        return {
+          data: null,
+          error: mapPasswordResetError(error),
+        };
+      }
+
+      // CRITICAL: Invalidate all other sessions (AC#4, NFR-S9)
+      await supabase.auth.signOut({ scope: 'global' });
+
+      // Clear local auth state
+      storage.delete(STORAGE_KEYS.AUTH_STATE);
+
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Password reset completed successfully',
+        level: 'info',
+      });
+
+      return {
+        data: { message: 'Mot de passe réinitialisé avec succès' },
+        error: null,
+      };
+    } catch (err) {
+      // Log unexpected errors to Sentry (no PII)
+      Sentry.captureException(err, {
+        tags: { feature: 'auth', action: 'confirmPasswordReset' },
       });
 
       return {

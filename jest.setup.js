@@ -150,6 +150,10 @@ jest.mock('@supabase/supabase-js', () => ({
       signOut: jest.fn().mockResolvedValue({ error: null }),
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
       getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      // Story 1.4: Password reset
+      resetPasswordForEmail: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      updateUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      setSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
@@ -172,6 +176,10 @@ jest.mock('@/lib/supabase', () => ({
       onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
       getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
       setSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      // Story 1.4: Password reset
+      resetPasswordForEmail: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      updateUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+      verifyOtp: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),

@@ -13,6 +13,8 @@ export {
   getPasswordStrength,
   PASSWORD_RULES,
 } from './hooks/useFormValidation';
+export { usePasswordReset } from './hooks/usePasswordReset';
+export type { PasswordCriteria } from './hooks/usePasswordReset';
 
 // Services
 export { authService } from './services/authService';
@@ -22,3 +24,5 @@ export { WelcomeScreen } from './components/WelcomeScreen';
 export { SignupScreen } from './components/SignupScreen';
 export { VerifyEmailScreen } from './components/VerifyEmailScreen';
 export { LoginScreen } from './components/LoginScreen';
+export { ForgotPasswordScreen } from './components/ForgotPasswordScreen';
+export { ResetPasswordScreen } from './components/ResetPasswordScreen';
