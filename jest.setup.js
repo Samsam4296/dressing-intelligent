@@ -3,6 +3,111 @@
 // Define __DEV__ global for React Native
 global.__DEV__ = true;
 
+// Mock react-native core components to prevent native module errors
+jest.mock('react-native', () => {
+  const React = require('react');
+
+  const MockView = ({ children, testID, ...props }) =>
+    React.createElement('View', { testID, ...props }, children);
+  const MockText = ({ children, testID, ...props }) =>
+    React.createElement('Text', { testID, ...props }, children);
+  const MockTouchableOpacity = ({ children, testID, onPress, disabled, accessibilityRole, accessibilityLabel, accessibilityState, ...props }) =>
+    React.createElement('TouchableOpacity', {
+      testID,
+      onPress,
+      disabled,
+      accessibilityRole,
+      accessibilityLabel,
+      accessibilityState,
+      ...props
+    }, children);
+  const MockTextInput = ({ testID, value, onChangeText, placeholder, maxLength, accessibilityLabel, accessibilityHint, ...props }) =>
+    React.createElement('TextInput', {
+      testID,
+      value,
+      onChangeText,
+      placeholder,
+      maxLength,
+      accessibilityLabel,
+      accessibilityHint,
+      ...props
+    });
+  const MockModal = ({ children, visible, testID, ...props }) =>
+    visible ? React.createElement('Modal', { testID, ...props }, children) : null;
+  const MockPressable = ({ children, testID, onPress, ...props }) =>
+    React.createElement('Pressable', { testID, onPress, ...props }, children);
+  const MockScrollView = ({ children, testID, ...props }) =>
+    React.createElement('ScrollView', { testID, ...props }, children);
+  const MockImage = ({ testID, source, ...props }) =>
+    React.createElement('Image', { testID, source, ...props });
+  const MockActivityIndicator = ({ testID, ...props }) =>
+    React.createElement('ActivityIndicator', { testID, ...props });
+
+  return {
+    View: MockView,
+    Text: MockText,
+    TouchableOpacity: MockTouchableOpacity,
+    TextInput: MockTextInput,
+    Modal: MockModal,
+    Pressable: MockPressable,
+    ScrollView: MockScrollView,
+    Image: MockImage,
+    ActivityIndicator: MockActivityIndicator,
+    StyleSheet: {
+      create: (styles) => styles,
+      flatten: (style) => style,
+      hairlineWidth: 1,
+    },
+    Platform: {
+      OS: 'ios',
+      select: (obj) => obj.ios || obj.default,
+      Version: 14,
+    },
+    Dimensions: {
+      get: () => ({ width: 390, height: 844 }),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    },
+    Animated: {
+      View: MockView,
+      Text: MockText,
+      Image: MockImage,
+      ScrollView: MockScrollView,
+      createAnimatedComponent: (component) => component,
+      timing: () => ({ start: jest.fn() }),
+      spring: () => ({ start: jest.fn() }),
+      Value: jest.fn(() => ({
+        setValue: jest.fn(),
+        interpolate: jest.fn(() => ({ __getValue: () => 0 })),
+      })),
+      event: jest.fn(),
+      add: jest.fn(),
+      multiply: jest.fn(),
+    },
+    Keyboard: {
+      dismiss: jest.fn(),
+      addListener: jest.fn(() => ({ remove: jest.fn() })),
+      removeListener: jest.fn(),
+    },
+    Alert: {
+      alert: jest.fn(),
+    },
+    Linking: {
+      openURL: jest.fn(),
+      canOpenURL: jest.fn().mockResolvedValue(true),
+    },
+    PixelRatio: {
+      get: () => 2,
+      getFontScale: () => 1,
+      getPixelSizeForLayoutSize: (size) => size * 2,
+      roundToNearestPixel: (size) => size,
+    },
+    NativeModules: {},
+    useColorScheme: () => 'light',
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
+  };
+});
+
 // Mock nativewind to prevent native module access
 jest.mock('nativewind', () => ({
   useColorScheme: () => ({ colorScheme: 'light', toggleColorScheme: jest.fn() }),
@@ -63,6 +168,26 @@ jest.mock('@expo/vector-icons', () => ({
 
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const MockAnimatedView = ({ children, testID, entering, exiting, layout, ...props }) =>
+    React.createElement('Animated.View', { testID, ...props }, children);
+
+  // Create chainable animation objects
+  const createChainableAnimation = () => {
+    const chainable = {
+      duration: () => chainable,
+      delay: () => chainable,
+      springify: () => chainable,
+      damping: () => chainable,
+      stiffness: () => chainable,
+      mass: () => chainable,
+      withInitialValues: () => chainable,
+      withCallback: () => chainable,
+      easing: () => chainable,
+    };
+    return chainable;
+  };
+
   return {
     default: {
       call: jest.fn(),
@@ -74,7 +199,10 @@ jest.mock('react-native-reanimated', () => {
       set: jest.fn(),
       cond: jest.fn(),
       interpolate: jest.fn(),
-      View: 'View',
+      View: MockAnimatedView,
+      Text: 'Animated.Text',
+      Image: 'Animated.Image',
+      ScrollView: 'Animated.ScrollView',
       Extrapolate: { CLAMP: 'clamp' },
       Transition: {
         Together: 'Together',
@@ -87,9 +215,29 @@ jest.mock('react-native-reanimated', () => {
     withTiming: (v) => v,
     withSpring: (v) => v,
     withSequence: (...args) => args[0],
-    FadeIn: { duration: () => ({}) },
-    FadeOut: { duration: () => ({}) },
-    Layout: {},
+    FadeIn: createChainableAnimation(),
+    FadeOut: createChainableAnimation(),
+    FadeInDown: createChainableAnimation(),
+    FadeOutDown: createChainableAnimation(),
+    FadeInUp: createChainableAnimation(),
+    FadeOutUp: createChainableAnimation(),
+    FadeInRight: createChainableAnimation(),
+    FadeOutRight: createChainableAnimation(),
+    FadeInLeft: createChainableAnimation(),
+    FadeOutLeft: createChainableAnimation(),
+    SlideInDown: createChainableAnimation(),
+    SlideOutDown: createChainableAnimation(),
+    SlideInUp: createChainableAnimation(),
+    SlideOutUp: createChainableAnimation(),
+    SlideInRight: createChainableAnimation(),
+    SlideOutRight: createChainableAnimation(),
+    SlideInLeft: createChainableAnimation(),
+    SlideOutLeft: createChainableAnimation(),
+    Layout: createChainableAnimation(),
+    LinearTransition: createChainableAnimation(),
+    SequencedTransition: createChainableAnimation(),
+    ZoomIn: createChainableAnimation(),
+    ZoomOut: createChainableAnimation(),
   };
 });
 

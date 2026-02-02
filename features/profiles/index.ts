@@ -1,6 +1,7 @@
 /**
  * Profiles Feature - Barrel Exports
  * Story 1.5: Création Premier Profil
+ * Story 1.6: Création Profils Additionnels
  *
  * Exports all public APIs for the profiles feature.
  */
@@ -40,3 +41,7 @@ export { useProfileStore } from './stores/useProfileStore';
 // Components
 export { AvatarPicker } from './components/AvatarPicker';
 export { CreateProfileScreen } from './components/CreateProfileScreen';
+// Story 1.6: Multi-profile management components
+export { ProfilesList } from './components/ProfilesList';
+export { ProfileBubble } from './components/ProfileBubble';
+export { AddProfileModal } from './components/AddProfileModal';
