@@ -1,10 +1,15 @@
 /**
  * Profile Store (Zustand)
  * Story 1.5: Création Premier Profil
+ * Story 1.7: Switch Entre Profils
  *
  * UI state for profile management.
  * CRITICAL: This is for UI state ONLY. Server state uses TanStack Query.
  * Per project-context.md State Management Decision Tree.
+ *
+ * AC#5: UI reflects immediately via currentProfileId
+ * AC#6: Profile actif persisted (survives restart)
+ * AC#17: Cold start restores active profile from storage
  */
 
 import { create } from 'zustand';
@@ -121,3 +126,29 @@ export const selectCurrentProfileId = (state: ProfileStoreState) => state.curren
  */
 export const selectHasCompletedOnboarding = (state: ProfileStoreState) =>
   state.hasCompletedOnboarding;
+
+// ============================================
+// Convenience Hooks (Story 1.7)
+// ============================================
+
+/**
+ * Hook to get current profile ID with automatic re-render on change
+ *
+ * @example
+ * ```typescript
+ * const currentProfileId = useCurrentProfileId();
+ * // Will re-render when currentProfileId changes
+ * ```
+ */
+export const useCurrentProfileId = () => useProfileStore(selectCurrentProfileId);
+
+/**
+ * Hook to get setCurrentProfile action
+ *
+ * @example
+ * ```typescript
+ * const setCurrentProfile = useSetCurrentProfile();
+ * setCurrentProfile('new-profile-id');
+ * ```
+ */
+export const useSetCurrentProfile = () => useProfileStore((state) => state.setCurrentProfile);

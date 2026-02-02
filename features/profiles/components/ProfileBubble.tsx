@@ -1,17 +1,26 @@
 /**
  * ProfileBubble Component
  * Story 1.6: Création Profils Additionnels
+ * Story 1.7: Switch Entre Profils
  *
  * Displays a profile avatar with name.
  * Used in ProfilesList to show existing profiles.
+ * Supports press animations and haptic feedback for profile switching.
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-A4: Dark mode support
+ * NFR-P4: Animation performance 60fps
  */
 
 import { View, Text, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import type { Profile } from '../types/profile.types';
 
 // ============================================
@@ -27,21 +36,30 @@ interface ProfileBubbleProps {
   size?: number;
   /** Optional callback when pressed */
   onPress?: (profile: Profile) => void;
+  /** Whether the bubble is disabled (e.g., during switch) */
+  disabled?: boolean;
 }
+
+// ============================================
+// Animated Pressable
+// ============================================
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // ============================================
 // Component
 // ============================================
 
 /**
- * Profile bubble displaying avatar and name
+ * Profile bubble displaying avatar and name with animations
  *
  * @example
  * ```tsx
  * <ProfileBubble
  *   profile={profile}
- *   isActive={profile.is_active}
- *   onPress={handleProfilePress}
+ *   isActive={profile.id === currentProfileId}
+ *   onPress={handleSwitch}
+ *   disabled={isSwitching}
  * />
  * ```
  */
@@ -50,32 +68,64 @@ export const ProfileBubble = ({
   isActive = false,
   size = 64,
   onPress,
+  disabled = false,
 }: ProfileBubbleProps) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const handlePress = () => {
-    onPress?.(profile);
+  // Animation shared value for scale effect
+  const scale = useSharedValue(1);
+
+  // Animated style for press feedback (60fps with Reanimated)
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  /**
+   * Handle press in with haptic feedback and scale animation
+   * AC#7: Haptic feedback Light on tap
+   */
+  const handlePressIn = () => {
+    if (!disabled && !isActive && onPress) {
+      scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
   };
 
-  const Container = onPress ? Pressable : View;
-  const containerProps = onPress
-    ? {
-        onPress: handlePress,
-        accessibilityRole: 'button' as const,
-        accessibilityLabel: `Profil ${profile.display_name}${isActive ? ', actif' : ''}`,
-        accessibilityState: { selected: isActive },
-        testID: `profile-bubble-${profile.id}`,
-      }
-    : {
-        accessibilityRole: 'none' as const,
-        testID: `profile-bubble-${profile.id}`,
-      };
+  /**
+   * Handle press out - restore scale
+   */
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 150 });
+  };
+
+  /**
+   * Handle press - trigger callback
+   */
+  const handlePress = () => {
+    if (!disabled && !isActive) {
+      onPress?.(profile);
+    }
+  };
+
+  // Determine if component should be interactive
+  const isInteractive = onPress && !isActive && !disabled;
 
   return (
-    <Container
-      className="items-center min-w-[80px] relative"
-      {...containerProps}
+    <AnimatedPressable
+      style={animatedStyle}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={handlePress}
+      disabled={!isInteractive}
+      className={`items-center min-w-[80px] min-h-[44px] relative ${
+        disabled ? 'opacity-50' : ''
+      }`}
+      accessibilityRole="button"
+      accessibilityLabel={`Profil ${profile.display_name}${isActive ? ', profil actif' : ', appuyer pour changer de profil'}`}
+      accessibilityState={{ selected: isActive, disabled: !isInteractive }}
+      accessibilityHint={isActive ? 'Profil actuellement actif' : 'Appuyer pour changer vers ce profil'}
+      testID={`profile-bubble-${profile.id}`}
     >
       {/* Avatar Container with active indicator */}
       <View
@@ -124,13 +174,13 @@ export const ProfileBubble = ({
       {/* Active indicator badge */}
       {isActive && (
         <View
-          className="absolute -top-1 -right-1 bg-blue-500 dark:bg-blue-400 rounded-full p-1"
+          className="absolute -top-1 -right-1 bg-blue-500 dark:bg-blue-400 rounded-full items-center justify-center"
           style={{ width: 20, height: 20 }}
         >
           <Ionicons name="checkmark" size={12} color="#FFFFFF" />
         </View>
       )}
-    </Container>
+    </AnimatedPressable>
   );
 };
 

@@ -1,14 +1,31 @@
 /**
  * useProfiles Hook
  * Story 1.5: Création Premier Profil
+ * Story 1.7: Switch Entre Profils
  *
  * TanStack Query hooks for profile management.
  * CRITICAL: Query keys MUST be structured [feature, ...identifiers] per project-context.md
+ *
+ * AC#3: Switch < 1 second with optimistic updates (NFR-P4)
+ * AC#4: All profile data invalidated on switch
+ * AC#8: Smooth 60fps animation with haptic feedback
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
+import NetInfo from '@react-native-community/netinfo';
 import { profileService } from '../services/profileService';
+import { switchProfileService } from '../services/switchProfileService';
+import { useProfileStore } from '../stores/useProfileStore';
+import { showToast } from '@/shared/components/Toast';
+import { storageHelpers, zustandStorage } from '@/lib/storage';
 import type { CreateProfileRequest, UpdateProfileRequest, Profile } from '../types/profile.types';
+
+// ============================================
+// Storage Keys for Offline Support
+// ============================================
+
+const PENDING_SWITCH_KEY = 'pending_profile_switch';
 
 // ============================================
 // Query Keys (structured for invalidation)
@@ -202,4 +219,139 @@ export const useUploadAvatar = () => {
       queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
+};
+
+// ============================================
+// Story 1.7: Switch Profile Mutation
+// ============================================
+
+/**
+ * Switch active profile with optimistic updates and offline support
+ *
+ * AC#3: Switch executes in less than 1 second (NFR-P4) via optimistic UI
+ * AC#4: All profile data invalidated on success
+ * AC#5: UI reflects immediately via Zustand store
+ * AC#7: Haptic feedback on success/error
+ * AC#9: Works offline with local cache
+ * AC#10: Toast indicates offline mode
+ * AC#12: Error keeps previous profile active
+ *
+ * @example
+ * ```typescript
+ * const { mutate: switchProfile, isPending } = useSwitchProfile();
+ *
+ * const handleSwitch = (profileId: string) => {
+ *   switchProfile(profileId);
+ * };
+ * ```
+ */
+export const useSwitchProfile = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newProfileId: string) => {
+      // Get fresh currentProfileId at mutation time (avoid stale closure)
+      const { currentProfileId } = useProfileStore.getState();
+
+      // Check network connectivity
+      const netState = await NetInfo.fetch();
+
+      if (!netState.isConnected) {
+        // Offline mode: store pending switch and return success
+        await storageHelpers.setJSON(PENDING_SWITCH_KEY, {
+          profileId: newProfileId,
+          timestamp: Date.now(),
+        });
+
+        return {
+          previousProfileId: currentProfileId || '',
+          newProfileId,
+          offline: true,
+        };
+      }
+
+      // Online mode: execute server switch
+      const result = await switchProfileService.switchProfile(newProfileId);
+
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+
+      return result.data!;
+    },
+
+    // Optimistic update: immediate UI response (AC#3, AC#5)
+    onMutate: async (newProfileId) => {
+      // Get fresh state at mutation time (avoid stale closure)
+      const { setCurrentProfile, currentProfileId } = useProfileStore.getState();
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: profileKeys.all });
+
+      // Snapshot previous state for rollback
+      const previousProfileId = currentProfileId;
+
+      // Optimistic update Zustand store immediately (0ms perceived latency)
+      setCurrentProfile(newProfileId);
+
+      // Return context for potential rollback
+      return { previousProfileId };
+    },
+
+    onSuccess: (result, _newProfileId, _context) => {
+      if (result.offline) {
+        // Offline switch: show info toast (AC#10)
+        showToast({
+          type: 'info',
+          message: 'Mode hors ligne - données locales',
+        });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } else {
+        // Online switch: invalidate all caches (AC#4)
+        queryClient.invalidateQueries({ queryKey: profileKeys.all });
+        queryClient.invalidateQueries({ queryKey: ['clothes'] });
+        queryClient.invalidateQueries({ queryKey: ['recommendations'] });
+
+        // Success haptic feedback (AC#7)
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    },
+
+    onError: (error, _newProfileId, context) => {
+      // Get fresh setCurrentProfile at error time
+      const { setCurrentProfile } = useProfileStore.getState();
+
+      // Rollback optimistic update (AC#12)
+      if (context?.previousProfileId) {
+        setCurrentProfile(context.previousProfileId);
+      }
+
+      // Show error toast (AC#13)
+      showToast({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Impossible de changer de profil',
+      });
+
+      // Error haptic feedback (AC#7)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    },
+  });
+};
+
+/**
+ * Get pending profile switch stored for offline sync
+ */
+export const getPendingSwitch = async (): Promise<{ profileId: string; timestamp: number } | null> => {
+  return storageHelpers.getJSON<{ profileId: string; timestamp: number }>(PENDING_SWITCH_KEY);
+};
+
+/**
+ * Clear pending profile switch after successful sync
+ */
+export const clearPendingSwitch = async (): Promise<void> => {
+  try {
+    await zustandStorage.removeItem(PENDING_SWITCH_KEY);
+  } catch {
+    // Silently fail if removal fails
+  }
 };

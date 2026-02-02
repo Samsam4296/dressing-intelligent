@@ -1,15 +1,16 @@
 /**
  * ProfilesList Component
  * Story 1.6: Création Profils Additionnels
+ * Story 1.7: Switch Entre Profils
  *
- * Displays existing profiles with add button.
+ * Displays existing profiles with add button and switch functionality.
  *
- * AC#1: Given l'utilisateur a moins de 3 profils When il accède à la gestion
- *       des profils Then il voit un bouton "Ajouter un profil" actif et cliquable
- * AC#2: Le compteur de profils affiche "X/3 profils"
- * AC#6: Given l'utilisateur a déjà 3 profils When il accède à la gestion
- *       des profils Then le bouton "Ajouter" est désactivé avec opacité réduite
- * AC#7: Un message explicatif est affiché: "Nombre maximum de profils atteint (3)"
+ * AC#1 (1.6): Given l'utilisateur a moins de 3 profils When il accède à la gestion
+ *             des profils Then il voit un bouton "Ajouter un profil" actif et cliquable
+ * AC#2 (1.6): Le compteur de profils affiche "X/3 profils"
+ * AC#1 (1.7): Profil actif visuellement distingué
+ * AC#2 (1.7): Profils non-actifs cliquables pour switch
+ * AC#3 (1.7): Switch < 1 seconde (NFR-P4)
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-A4: Dark mode support
@@ -20,7 +21,8 @@ import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInRight, Layout } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { useProfiles } from '../hooks/useProfiles';
+import { useProfiles, useSwitchProfile } from '../hooks/useProfiles';
+import { useCurrentProfileId } from '../stores/useProfileStore';
 import { ProfileBubble } from './ProfileBubble';
 import type { Profile } from '../types/profile.types';
 
@@ -37,7 +39,7 @@ const MAX_PROFILES = 3;
 interface ProfilesListProps {
   /** Callback when add profile button is pressed */
   onAddProfile: () => void;
-  /** Callback when a profile is pressed (optional) */
+  /** Callback when a profile is pressed (optional - for external handling) */
   onProfilePress?: (profile: Profile) => void;
 }
 
@@ -46,13 +48,12 @@ interface ProfilesListProps {
 // ============================================
 
 /**
- * ProfilesList component displaying user profiles with add functionality
+ * ProfilesList component displaying user profiles with switch and add functionality
  *
  * @example
  * ```tsx
  * <ProfilesList
  *   onAddProfile={() => setAddModalVisible(true)}
- *   onProfilePress={(profile) => handleSwitchProfile(profile)}
  * />
  * ```
  */
@@ -63,16 +64,41 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   // Fetch profiles using TanStack Query
   const { data: profiles, isLoading, error } = useProfiles();
 
+  // Get current profile ID from Zustand (optimistic UI - AC#1, AC#5 Story 1.7)
+  const currentProfileId = useCurrentProfileId();
+
+  // Switch profile mutation (AC#3: < 1s with optimistic updates)
+  const { mutate: switchProfile, isPending: isSwitching } = useSwitchProfile();
+
   // Calculate state
   const profileList = profiles || [];
   const profileCount = profileList.length;
   const canAddProfile = profileCount < MAX_PROFILES;
 
   /**
+   * Handle profile switch
+   * AC#2: Non-active profiles are clickable to initiate switch
+   * AC#3: Switch < 1 second via optimistic updates
+   */
+  const handleSwitch = (profile: Profile) => {
+    // Don't switch to already active profile
+    if (profile.id === currentProfileId) return;
+
+    // If external handler provided, use it
+    if (onProfilePress) {
+      onProfilePress(profile);
+      return;
+    }
+
+    // Execute switch mutation
+    switchProfile(profile.id);
+  };
+
+  /**
    * Handle add profile button press with haptic feedback
    */
   const handleAddPress = () => {
-    if (canAddProfile) {
+    if (canAddProfile && !isSwitching) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onAddProfile();
     }
@@ -115,7 +141,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
       className="p-4"
       testID="profiles-list-container"
     >
-      {/* Header with counter (AC#2) */}
+      {/* Header with counter (AC#2 Story 1.6) */}
       <View className="flex-row justify-between items-center mb-4">
         <Text className="text-xl font-bold text-gray-900 dark:text-white">
           Mes profils
@@ -144,7 +170,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
         </View>
       </View>
 
-      {/* Profiles list - horizontal scrollable */}
+      {/* Profiles list - horizontal wrap (AC#1, AC#2 Story 1.7) */}
       <View
         className="flex-row flex-wrap gap-4 mb-6"
         testID="profiles-bubbles-container"
@@ -157,29 +183,44 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
           >
             <ProfileBubble
               profile={profile}
-              isActive={profile.is_active}
-              onPress={onProfilePress}
+              isActive={profile.id === currentProfileId}
+              onPress={handleSwitch}
+              disabled={isSwitching}
             />
           </Animated.View>
         ))}
       </View>
 
-      {/* Add Profile Button (AC#1, AC#6) */}
+      {/* Switch in progress indicator (AC#3) */}
+      {isSwitching && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          className="flex-row items-center justify-center mb-4"
+          testID="switch-loading-indicator"
+        >
+          <ActivityIndicator size="small" color={isDark ? '#60A5FA' : '#3B82F6'} />
+          <Text className="ml-2 text-sm text-gray-500 dark:text-gray-400">
+            Changement de profil...
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Add Profile Button (AC#1, AC#6 Story 1.6) */}
       <Pressable
         className={`flex-row items-center justify-center py-4 px-6 rounded-xl min-h-[56px] ${
-          canAddProfile
+          canAddProfile && !isSwitching
             ? 'bg-blue-600 dark:bg-blue-500 active:bg-blue-700 dark:active:bg-blue-600'
             : 'bg-gray-300 dark:bg-gray-700 opacity-50'
         }`}
         onPress={handleAddPress}
-        disabled={!canAddProfile}
+        disabled={!canAddProfile || isSwitching}
         accessibilityRole="button"
         accessibilityLabel={
           canAddProfile
             ? 'Ajouter un profil'
             : 'Limite de profils atteinte, impossible d\'ajouter'
         }
-        accessibilityState={{ disabled: !canAddProfile }}
+        accessibilityState={{ disabled: !canAddProfile || isSwitching }}
         accessibilityHint={
           canAddProfile
             ? 'Appuyez pour créer un nouveau profil'
@@ -190,11 +231,11 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
         <Ionicons
           name="add-circle-outline"
           size={24}
-          color={canAddProfile ? '#FFFFFF' : isDark ? '#6B7280' : '#9CA3AF'}
+          color={canAddProfile && !isSwitching ? '#FFFFFF' : isDark ? '#6B7280' : '#9CA3AF'}
         />
         <Text
           className={`ml-2 font-semibold text-base ${
-            canAddProfile
+            canAddProfile && !isSwitching
               ? 'text-white'
               : 'text-gray-500 dark:text-gray-400'
           }`}
@@ -203,7 +244,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
         </Text>
       </Pressable>
 
-      {/* Limit reached message (AC#7) */}
+      {/* Limit reached message (AC#7 Story 1.6) */}
       {!canAddProfile && (
         <Animated.View
           entering={FadeIn.delay(200).duration(300)}

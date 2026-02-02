@@ -2,6 +2,10 @@
  * Tabs Layout
  * Main app navigation after authentication and profile creation.
  *
+ * Story 1.7: Switch Entre Profils
+ * - useSyncPendingSwitch: Syncs offline profile switches on reconnection (AC#11)
+ * - useValidateActiveProfile: Auto-recovers if active profile is deleted (AC#18)
+ *
  * This layout will be expanded in future stories to include:
  * - Home/Recommendations tab
  * - Wardrobe tab
@@ -11,10 +15,17 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
+import { useSyncPendingSwitch, useValidateActiveProfile } from '@/features/profiles';
 
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  // Story 1.7: Sync offline profile switches when network is restored (AC#11)
+  useSyncPendingSwitch();
+
+  // Story 1.7: Auto-recover if active profile no longer exists (AC#18)
+  useValidateActiveProfile();
 
   return (
     <Tabs
