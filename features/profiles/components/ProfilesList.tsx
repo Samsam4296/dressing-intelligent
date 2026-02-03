@@ -2,8 +2,9 @@
  * ProfilesList Component
  * Story 1.6: Création Profils Additionnels
  * Story 1.7: Switch Entre Profils
+ * Story 1.8: Modification de Profil
  *
- * Displays existing profiles with add button and switch functionality.
+ * Displays existing profiles with add button, switch functionality, and edit modal.
  *
  * AC#1 (1.6): Given l'utilisateur a moins de 3 profils When il accède à la gestion
  *             des profils Then il voit un bouton "Ajouter un profil" actif et cliquable
@@ -11,11 +12,13 @@
  * AC#1 (1.7): Profil actif visuellement distingué
  * AC#2 (1.7): Profils non-actifs cliquables pour switch
  * AC#3 (1.7): Switch < 1 seconde (NFR-P4)
+ * AC#1 (1.8): Long press on active profile opens edit modal with pre-filled data
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-A4: Dark mode support
  */
 
+import { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +27,7 @@ import * as Haptics from 'expo-haptics';
 import { useProfiles, useSwitchProfile } from '../hooks/useProfiles';
 import { useCurrentProfileId } from '../stores/useProfileStore';
 import { ProfileBubble } from './ProfileBubble';
+import { EditProfileModal } from './EditProfileModal';
 import type { Profile } from '../types/profile.types';
 
 // ============================================
@@ -70,6 +74,9 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   // Switch profile mutation (AC#3: < 1s with optimistic updates)
   const { mutate: switchProfile, isPending: isSwitching } = useSwitchProfile();
 
+  // Story 1.8: Edit profile state (Subtask 3.2)
+  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+
   // Calculate state
   const profileList = profiles || [];
   const profileCount = profileList.length;
@@ -102,6 +109,23 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onAddProfile();
     }
+  };
+
+  /**
+   * Handle long press on active profile to open edit modal
+   * Story 1.8 AC#1: Long press opens edit modal with pre-filled data
+   * Subtask 3.1: onLongPress handler for active profile
+   */
+  const handleEditProfile = (profile: Profile) => {
+    setEditingProfile(profile);
+  };
+
+  /**
+   * Close edit modal
+   * Subtask 3.3: Handle modal close
+   */
+  const handleCloseEditModal = () => {
+    setEditingProfile(null);
   };
 
   // Loading state
@@ -185,6 +209,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
               profile={profile}
               isActive={profile.id === currentProfileId}
               onPress={handleSwitch}
+              onLongPress={handleEditProfile}
               disabled={isSwitching}
             />
           </Animated.View>
@@ -261,6 +286,14 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
           </Text>
         </Animated.View>
       )}
+
+      {/* Edit Profile Modal (Story 1.8 - Subtask 3.3) */}
+      <EditProfileModal
+        visible={editingProfile !== null}
+        profile={editingProfile}
+        onClose={handleCloseEditModal}
+        onProfileUpdated={handleCloseEditModal}
+      />
     </Animated.View>
   );
 };

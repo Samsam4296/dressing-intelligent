@@ -14,6 +14,7 @@ export type {
   UpdateProfileRequest,
   ProfileResponse,
   ProfileError,
+  NameValidationResult,
 } from './types/profile.types';
 export { validateProfileName } from './types/profile.types';
 
@@ -49,6 +50,9 @@ export { useRequireProfile } from './hooks/useRequireProfile';
 export { useSyncPendingSwitch } from './hooks/useSyncPendingSwitch';
 export { useValidateActiveProfile } from './hooks/useValidateActiveProfile';
 
+// Hooks - Story 1.8: Edit Profile
+export { useEditProfile } from './hooks/useEditProfile';
+
 // Store - Zustand
 export {
   useProfileStore,
@@ -66,3 +70,5 @@ export { ProfileBubble } from './components/ProfileBubble';
 export { AddProfileModal } from './components/AddProfileModal';
 // Story 1.7: Profile indicator in header
 export { ProfileIndicator } from './components/ProfileIndicator';
+// Story 1.8: Edit profile modal
+export { EditProfileModal } from './components/EditProfileModal';

@@ -7,19 +7,21 @@
  */
 
 import { useCallback } from 'react';
+import type { ViewStyle } from 'react-native';
 import {
   useSharedValue,
   useAnimatedStyle,
   withSequence,
   withTiming,
   type SharedValue,
+  type AnimatedStyle,
 } from 'react-native-reanimated';
 
 interface UseShakeAnimationReturn {
   /** Shared value for shake offset (use in useAnimatedStyle) */
   shakeValue: SharedValue<number>;
-  /** Animated style with translateX transform */
-  shakeStyle: ReturnType<typeof useAnimatedStyle>;
+  /** Animated style with translateX transform (typed for ViewStyle) */
+  shakeStyle: AnimatedStyle<ViewStyle>;
   /** Trigger shake animation */
   triggerShake: () => void;
 }
@@ -46,7 +48,7 @@ interface UseShakeAnimationReturn {
 export const useShakeAnimation = (): UseShakeAnimationReturn => {
   const shakeValue = useSharedValue(0);
 
-  const shakeStyle = useAnimatedStyle(() => ({
+  const shakeStyle = useAnimatedStyle<ViewStyle>(() => ({
     transform: [{ translateX: shakeValue.value }],
   }));
 

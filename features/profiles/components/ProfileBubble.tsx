@@ -2,10 +2,12 @@
  * ProfileBubble Component
  * Story 1.6: Création Profils Additionnels
  * Story 1.7: Switch Entre Profils
+ * Story 1.8: Modification de Profil
  *
  * Displays a profile avatar with name.
  * Used in ProfilesList to show existing profiles.
  * Supports press animations and haptic feedback for profile switching.
+ * Supports long press on active profile to open edit modal (Story 1.8 AC#1).
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-A4: Dark mode support
@@ -34,8 +36,10 @@ interface ProfileBubbleProps {
   isActive?: boolean;
   /** Size of the avatar (default 64) */
   size?: number;
-  /** Optional callback when pressed */
+  /** Optional callback when pressed (for non-active profiles to switch) */
   onPress?: (profile: Profile) => void;
+  /** Optional callback when long pressed (for active profile to edit - Story 1.8) */
+  onLongPress?: (profile: Profile) => void;
   /** Whether the bubble is disabled (e.g., during switch) */
   disabled?: boolean;
 }
@@ -68,6 +72,7 @@ export const ProfileBubble = ({
   isActive = false,
   size = 64,
   onPress,
+  onLongPress,
   disabled = false,
 }: ProfileBubbleProps) => {
   const { colorScheme } = useColorScheme();
@@ -83,10 +88,14 @@ export const ProfileBubble = ({
 
   /**
    * Handle press in with haptic feedback and scale animation
-   * AC#7: Haptic feedback Light on tap
+   * AC#7 (Story 1.7): Haptic feedback Light on tap
    */
   const handlePressIn = () => {
-    if (!disabled && !isActive && onPress) {
+    // Animation for non-active profiles (switch) or active profile with long press (edit)
+    const canSwitch = !disabled && !isActive && onPress;
+    const canEdit = !disabled && isActive && onLongPress;
+
+    if (canSwitch || canEdit) {
       scale.value = withSpring(0.95, { damping: 15, stiffness: 150 });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -100,7 +109,7 @@ export const ProfileBubble = ({
   };
 
   /**
-   * Handle press - trigger callback
+   * Handle press - trigger callback for non-active profiles (switch)
    */
   const handlePress = () => {
     if (!disabled && !isActive) {
@@ -108,8 +117,21 @@ export const ProfileBubble = ({
     }
   };
 
+  /**
+   * Handle long press - trigger callback for active profile (edit)
+   * Story 1.8 AC#1: Long press on active profile opens edit modal
+   */
+  const handleLongPress = () => {
+    if (!disabled && isActive && onLongPress) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onLongPress(profile);
+    }
+  };
+
   // Determine if component should be interactive
-  const isInteractive = onPress && !isActive && !disabled;
+  const canSwitch = onPress && !isActive && !disabled;
+  const canEdit = onLongPress && isActive && !disabled;
+  const isInteractive = canSwitch || canEdit;
 
   return (
     <AnimatedPressable
@@ -117,6 +139,8 @@ export const ProfileBubble = ({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={handlePress}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
       disabled={!isInteractive}
       className={`items-center min-w-[80px] min-h-[44px] relative ${
         disabled ? 'opacity-50' : ''
@@ -124,7 +148,13 @@ export const ProfileBubble = ({
       accessibilityRole="button"
       accessibilityLabel={`Profil ${profile.display_name}${isActive ? ', profil actif' : ', appuyer pour changer de profil'}`}
       accessibilityState={{ selected: isActive, disabled: !isInteractive }}
-      accessibilityHint={isActive ? 'Profil actuellement actif' : 'Appuyer pour changer vers ce profil'}
+      accessibilityHint={
+        isActive && canEdit
+          ? 'Appui long pour modifier ce profil'
+          : isActive
+          ? 'Profil actuellement actif'
+          : 'Appuyer pour changer vers ce profil'
+      }
       testID={`profile-bubble-${profile.id}`}
     >
       {/* Avatar Container with active indicator */}

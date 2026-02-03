@@ -127,7 +127,24 @@ export const useCreateProfile = () => {
 };
 
 /**
- * Update an existing profile
+ * Update an existing profile with optimistic updates
+ *
+ * Story 1.8: Modification de Profil
+ * AC#2: Optimistic update - UI updates immediately
+ * AC#5: onError rollback - revert to previous state
+ *
+ * @example
+ * ```typescript
+ * const { mutate: updateProfile, isPending } = useUpdateProfile();
+ *
+ * updateProfile(
+ *   { profileId: '123', updates: { name: 'New Name' } },
+ *   {
+ *     onSuccess: () => { closeModal(); },
+ *     onError: (error) => { showError(error.message); }
+ *   }
+ * );
+ * ```
  */
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
@@ -146,14 +163,59 @@ export const useUpdateProfile = () => {
       }
       return result.data as Profile;
     },
-    onSuccess: (updatedProfile) => {
-      // Invalidate all profile queries
-      queryClient.invalidateQueries({ queryKey: profileKeys.all });
 
-      // Update active profile cache if this was the active one
-      if (updatedProfile?.is_active) {
-        queryClient.setQueryData(profileKeys.active(), updatedProfile);
+    // Optimistic update: immediate UI response (AC#2)
+    onMutate: async ({ profileId, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: profileKeys.all });
+
+      // Snapshot previous state for rollback
+      const previousProfiles = queryClient.getQueryData<Profile[]>(profileKeys.lists());
+      const previousActiveProfile = queryClient.getQueryData<Profile>(profileKeys.active());
+
+      // Optimistically update profiles list cache
+      if (previousProfiles) {
+        const updatedProfiles = previousProfiles.map((profile) =>
+          profile.id === profileId
+            ? {
+                ...profile,
+                display_name: updates.name ?? profile.display_name,
+                avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : profile.avatar_url,
+              }
+            : profile
+        );
+        queryClient.setQueryData(profileKeys.lists(), updatedProfiles);
       }
+
+      // Optimistically update active profile cache if this is the active one
+      if (previousActiveProfile?.id === profileId) {
+        queryClient.setQueryData(profileKeys.active(), {
+          ...previousActiveProfile,
+          display_name: updates.name ?? previousActiveProfile.display_name,
+          avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : previousActiveProfile.avatar_url,
+        });
+      }
+
+      // Return context for potential rollback
+      return { previousProfiles, previousActiveProfile };
+    },
+
+    // Rollback on error (AC#5)
+    onError: (_error, _variables, context) => {
+      // Restore previous profiles list
+      if (context?.previousProfiles) {
+        queryClient.setQueryData(profileKeys.lists(), context.previousProfiles);
+      }
+
+      // Restore previous active profile
+      if (context?.previousActiveProfile) {
+        queryClient.setQueryData(profileKeys.active(), context.previousActiveProfile);
+      }
+    },
+
+    // Always refetch after error or success to sync with server
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: profileKeys.all });
     },
   });
 };

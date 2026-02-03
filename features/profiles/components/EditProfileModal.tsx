@@ -1,22 +1,21 @@
 /**
- * AddProfileModal Component
- * Story 1.6: Création Profils Additionnels
+ * EditProfileModal Component
+ * Story 1.8: Modification de Profil
  *
- * Modal for creating additional profiles.
+ * Modal for editing an existing profile.
+ * Uses useEditProfile hook for all state and business logic.
  *
- * AC#3: Modal/écran de création avec nom (2-30 caractères) et avatar optionnel
- * AC#4: Nouveau profil créé avec données isolées (RLS profile_id)
- * AC#5: Nouveau profil marqué comme NON actif (is_active = false)
- * AC#9: Toast de succès "Profil créé avec succès"
- * AC#10: Feedback haptique confirme la création (expo-haptics)
- * AC#11: Accessibilité (touch targets 44x44, contraste 4.5:1)
- * AC#12: Mode sombre natif supporté (NFR-A4)
+ * AC#1: Given l'utilisateur long-press sur son profil actif When le modal s'ouvre Then le nom et avatar actuels sont pré-remplis
+ * AC#2: Given l'utilisateur modifie le nom When il tape "Enregistrer" Then les modifications sont sauvegardées et l'UI se met à jour (optimistic update)
+ * AC#3: Given le nom est invalide (<2 ou >30 chars) Then une erreur inline s'affiche et le bouton Enregistrer est désactivé
+ * AC#4: Given l'utilisateur modifie l'avatar When il sélectionne une nouvelle image Then l'image est compressée et prévisualisée
+ * AC#5: Given une erreur survient (réseau/serveur) Then le formulaire reste ouvert avec les données saisies
+ * AC#6: Standard UX conventions apply (dark mode, accessibility, haptics, toast, Sentry - see Stories 1.5-1.7)
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-P1: Animations 60fps using Reanimated
  */
 
-import { useState, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -34,26 +33,24 @@ import Animated, {
   SlideInDown,
   SlideOutDown,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import * as Sentry from '@sentry/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AvatarPicker } from './AvatarPicker';
-import { useCreateProfile } from '../hooks/useProfiles';
-import { useShakeAnimation } from '@/features/auth';
-import { showToast } from '@/shared/components/Toast';
-import { validateProfileName } from '../types/profile.types';
+import { useEditProfile } from '../hooks/useEditProfile';
+import type { Profile } from '../types/profile.types';
 
 // ============================================
 // Types
 // ============================================
 
-interface AddProfileModalProps {
+interface EditProfileModalProps {
   /** Whether the modal is visible */
   visible: boolean;
+  /** Profile to edit */
+  profile: Profile | null;
   /** Callback when modal should close */
   onClose: () => void;
-  /** Callback when profile is successfully created */
-  onProfileCreated?: () => void;
+  /** Callback when profile is successfully updated */
+  onProfileUpdated?: () => void;
 }
 
 // ============================================
@@ -61,116 +58,50 @@ interface AddProfileModalProps {
 // ============================================
 
 /**
- * Modal for adding a new profile
+ * Modal for editing an existing profile
  *
  * @example
  * ```tsx
- * <AddProfileModal
- *   visible={isAddModalVisible}
- *   onClose={() => setAddModalVisible(false)}
- *   onProfileCreated={() => console.log('Profile created!')}
+ * <EditProfileModal
+ *   visible={isEditModalVisible}
+ *   profile={profileToEdit}
+ *   onClose={() => setEditModalVisible(false)}
+ *   onProfileUpdated={() => console.log('Profile updated!')}
  * />
  * ```
  */
-export const AddProfileModal = ({
+export const EditProfileModal = ({
   visible,
+  profile,
   onClose,
-  onProfileCreated,
-}: AddProfileModalProps) => {
+  onProfileUpdated,
+}: EditProfileModalProps) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  // Form state
-  const [name, setName] = useState('');
-  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  // All state and logic is managed by the hook
+  const {
+    name,
+    setName,
+    avatarUri,
+    nameValidation,
+    isValidName,
+    hasChanges,
+    canSubmit,
+    isPending,
+    shakeStyle,
+    handleSave,
+    handleAvatarSelected,
+    resetAndClose,
+  } = useEditProfile({
+    profile,
+    visible,
+    onClose,
+    onProfileUpdated,
+  });
 
-  // Mutation hook
-  const { mutate: createProfile, isPending } = useCreateProfile();
-
-  // Shake animation for validation error
-  const { shakeStyle, triggerShake } = useShakeAnimation();
-
-  // Validation
-  const nameValidation = validateProfileName(name);
-  const isValidName = name.length === 0 || nameValidation.isValid;
-  const canSubmit = nameValidation.isValid && !isPending;
-
-  /**
-   * Reset form and close modal
-   */
-  const resetAndClose = useCallback(() => {
-    setName('');
-    setAvatarUri(null);
-    onClose();
-  }, [onClose]);
-
-  /**
-   * Handle form submission
-   */
-  const handleCreate = useCallback(() => {
-    // Validate name
-    if (!nameValidation.isValid) {
-      triggerShake();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
-    // Create profile
-    createProfile(
-      { name: name.trim(), avatarUrl: avatarUri || undefined },
-      {
-        onSuccess: () => {
-          // Success haptic feedback (AC#10)
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-          // Success toast (AC#9)
-          showToast({
-            type: 'success',
-            message: 'Profil créé avec succès',
-          });
-
-          // Reset and close
-          resetAndClose();
-
-          // Notify parent
-          onProfileCreated?.();
-        },
-        onError: (error) => {
-          // Log error to Sentry (per project-context.md - NEVER console.log in production)
-          Sentry.captureException(error, {
-            tags: {
-              feature: 'profiles',
-              action: 'createProfile',
-            },
-            extra: {
-              profileName: name.trim(),
-              hasAvatar: !!avatarUri,
-            },
-          });
-
-          // Error haptic feedback
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-
-          // Error toast with message
-          showToast({
-            type: 'error',
-            message: error.message || 'Erreur lors de la création du profil',
-          });
-
-          // Shake animation
-          triggerShake();
-        },
-      }
-    );
-  }, [name, avatarUri, nameValidation.isValid, createProfile, triggerShake, resetAndClose, onProfileCreated]);
-
-  /**
-   * Handle avatar selection
-   */
-  const handleAvatarSelected = useCallback((uri: string) => {
-    setAvatarUri(uri);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }, []);
+  // Don't render if no profile
+  if (!profile) return null;
 
   return (
     <Modal
@@ -192,7 +123,7 @@ export const AddProfileModal = ({
           onPress={resetAndClose}
           accessibilityRole="button"
           accessibilityLabel="Fermer le modal"
-          testID="modal-backdrop"
+          testID="edit-modal-backdrop"
         />
 
         {/* Modal Content */}
@@ -200,7 +131,7 @@ export const AddProfileModal = ({
           entering={SlideInDown.springify().damping(20)}
           exiting={SlideOutDown.duration(200)}
           className="bg-white dark:bg-gray-900 rounded-t-3xl"
-          testID="add-profile-modal"
+          testID="edit-profile-modal"
         >
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -213,14 +144,14 @@ export const AddProfileModal = ({
               {/* Header */}
               <View className="flex-row justify-between items-center mb-6">
                 <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Nouveau profil
+                  Modifier le profil
                 </Text>
                 <Pressable
                   onPress={resetAndClose}
                   className="min-w-[44px] min-h-[44px] items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
                   accessibilityRole="button"
                   accessibilityLabel="Fermer"
-                  testID="close-modal-button"
+                  testID="close-edit-modal-button"
                 >
                   <Ionicons
                     name="close"
@@ -230,7 +161,7 @@ export const AddProfileModal = ({
                 </Pressable>
               </View>
 
-              {/* Avatar Picker (AC#3 - optional avatar) */}
+              {/* Avatar Picker with current avatar pre-filled (AC#1, AC#4) */}
               <View className="items-center mb-6">
                 <AvatarPicker
                   avatarUri={avatarUri}
@@ -239,11 +170,11 @@ export const AddProfileModal = ({
                   size={96}
                 />
                 <Text className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Avatar optionnel
+                  Appuyer pour modifier l'avatar
                 </Text>
               </View>
 
-              {/* Name Input (AC#3 - 2-30 characters) */}
+              {/* Name Input with validation (AC#1, AC#3) */}
               <Animated.View style={shakeStyle} className="mb-6">
                 <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nom du profil
@@ -259,15 +190,15 @@ export const AddProfileModal = ({
                   maxLength={30}
                   value={name}
                   onChangeText={setName}
-                  autoFocus
+                  autoFocus={false}
                   returnKeyType="done"
-                  onSubmitEditing={handleCreate}
+                  onSubmitEditing={handleSave}
                   editable={!isPending}
                   accessibilityLabel="Nom du profil"
                   accessibilityHint="Entrez un nom entre 2 et 30 caractères"
-                  testID="profile-name-input"
+                  testID="edit-profile-name-input"
                 />
-                {/* Validation feedback */}
+                {/* Validation feedback (AC#3) */}
                 <View className="flex-row justify-between mt-2">
                   <Text
                     className={`text-xs ${
@@ -275,7 +206,7 @@ export const AddProfileModal = ({
                         ? 'text-red-500 dark:text-red-400'
                         : 'text-gray-500 dark:text-gray-500'
                     }`}
-                    testID="name-validation-message"
+                    testID="edit-name-validation-message"
                   >
                     {!isValidName && name.length > 0
                       ? nameValidation.error
@@ -287,24 +218,26 @@ export const AddProfileModal = ({
                 </View>
               </Animated.View>
 
-              {/* Create Button (AC#11 - touch targets 44x44 min) */}
+              {/* Save Button (AC#2, AC#3 - disabled if invalid) */}
               <Pressable
                 className={`min-h-[56px] rounded-xl justify-center items-center ${
                   canSubmit
                     ? 'bg-blue-600 dark:bg-blue-500 active:bg-blue-700 dark:active:bg-blue-600'
                     : 'bg-gray-300 dark:bg-gray-700'
                 }`}
-                onPress={handleCreate}
+                onPress={handleSave}
                 disabled={!canSubmit}
                 accessibilityRole="button"
-                accessibilityLabel="Créer le profil"
+                accessibilityLabel="Enregistrer les modifications"
                 accessibilityState={{ disabled: !canSubmit }}
                 accessibilityHint={
                   canSubmit
-                    ? 'Appuyez pour créer le profil'
-                    : 'Entrez un nom valide pour activer ce bouton'
+                    ? 'Appuyez pour enregistrer les modifications'
+                    : hasChanges
+                    ? 'Corrigez les erreurs de validation'
+                    : "Modifiez le nom ou l'avatar pour activer ce bouton"
                 }
-                testID="create-profile-button"
+                testID="save-profile-button"
               >
                 {isPending ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
@@ -316,7 +249,7 @@ export const AddProfileModal = ({
                         : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
-                    Créer le profil
+                    Enregistrer
                   </Text>
                 )}
               </Pressable>
@@ -331,4 +264,4 @@ export const AddProfileModal = ({
   );
 };
 
-export default AddProfileModal;
+export default EditProfileModal;
