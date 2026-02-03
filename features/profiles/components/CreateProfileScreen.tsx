@@ -170,7 +170,7 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
             });
             logger.info('Avatar uploaded and profile updated', { feature: 'profiles' });
           }
-        } catch (avatarError) {
+        } catch (_avatarError) {
           // Log but don't fail profile creation for avatar upload failure
           logger.warn('Avatar upload failed, but profile created', {
             feature: 'profiles',

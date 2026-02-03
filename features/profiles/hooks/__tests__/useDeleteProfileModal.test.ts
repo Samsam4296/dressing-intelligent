@@ -10,7 +10,7 @@
  * - Error handling with haptic feedback and toast
  */
 
-import { renderHook, waitFor, act } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { useDeleteProfileModal } from '../useDeleteProfileModal';
 import { profileService } from '../../services/profileService';
@@ -47,6 +47,7 @@ const mockProfile = {
   user_id: 'user-1',
   display_name: 'Test Profile',
   avatar_url: null,
+  birth_date: null,
   is_active: false,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
@@ -59,6 +60,7 @@ const mockProfiles = [
     user_id: 'user-1',
     display_name: 'Second Profile',
     avatar_url: null,
+    birth_date: null,
     is_active: true,
     created_at: '2026-01-02T00:00:00Z',
     updated_at: '2026-01-02T00:00:00Z',

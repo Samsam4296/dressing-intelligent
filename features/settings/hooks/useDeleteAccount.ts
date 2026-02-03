@@ -23,7 +23,7 @@ import * as Sentry from '@sentry/react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { storage, storageHelpers } from '@/lib/storage';
+import { storageHelpers } from '@/lib/storage';
 import { showToast } from '@/shared/components/Toast';
 
 // ============================================

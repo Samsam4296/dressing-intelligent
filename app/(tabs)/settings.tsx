@@ -18,7 +18,6 @@ import { useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Pressable, StatusBar } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
-import * as Sentry from '@sentry/react-native';
 import { useAuth } from '@/features/auth';
 import { DeleteAccountModal } from '@/features/settings';
 
