@@ -17,6 +17,8 @@ export {
   selectSubscriptionStatus,
   selectIsSubscriptionActive,
   selectIsTrial,
+  selectExpiresAt,
+  selectTrialEndsAt,
 } from './stores/subscriptionStore';
 
 // Services

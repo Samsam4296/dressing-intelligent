@@ -168,6 +168,60 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
 // Selectors (for optimized re-renders)
 // ============================================
 
+/**
+ * Select subscription status (primitive value - safe for memoization)
+ */
 export const selectSubscriptionStatus = (state: SubscriptionStore) => state.status;
-export const selectIsSubscriptionActive = (state: SubscriptionStore) => state.isActive();
-export const selectIsTrial = (state: SubscriptionStore) => state.isTrial();
+
+/**
+ * Select if subscription is active
+ * Computed directly to avoid function call re-render issues
+ */
+export const selectIsSubscriptionActive = (state: SubscriptionStore): boolean => {
+  const { status, expiresAt } = state;
+
+  // Not active if no subscription
+  if (status === 'none' || status === 'cancelled' || status === 'expired') {
+    return false;
+  }
+
+  // Check expiration
+  if (expiresAt) {
+    const expires = new Date(expiresAt);
+    if (expires < new Date()) {
+      return false;
+    }
+  }
+
+  return status === 'trial' || status === 'active';
+};
+
+/**
+ * Select if user is in trial period
+ * Computed directly to avoid function call re-render issues
+ */
+export const selectIsTrial = (state: SubscriptionStore): boolean => {
+  const { status, trialEndsAt } = state;
+
+  if (status !== 'trial') {
+    return false;
+  }
+
+  // Check if trial is still valid
+  if (trialEndsAt) {
+    const trialEnd = new Date(trialEndsAt);
+    return trialEnd > new Date();
+  }
+
+  return false;
+};
+
+/**
+ * Select expiration date
+ */
+export const selectExpiresAt = (state: SubscriptionStore) => state.expiresAt;
+
+/**
+ * Select trial end date
+ */
+export const selectTrialEndsAt = (state: SubscriptionStore) => state.trialEndsAt;

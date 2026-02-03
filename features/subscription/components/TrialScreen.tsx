@@ -43,8 +43,10 @@ export const TrialScreen: React.FC = () => {
     isInitializing,
     error,
     product,
+    canRetry,
     handleStartTrial,
     handleSkip,
+    handleRetry,
   } = useStartTrial();
 
   const ctaScale = useSharedValue(1);
@@ -138,6 +140,19 @@ export const TrialScreen: React.FC = () => {
             <Text className="text-center text-sm text-red-600 dark:text-red-400">
               {error}
             </Text>
+            {canRetry && (
+              <Pressable
+                onPress={handleRetry}
+                disabled={isInitializing}
+                accessibilityRole="button"
+                accessibilityLabel="Réessayer l'initialisation"
+                testID="retry-button"
+                className="mt-3 min-h-[44px] items-center justify-center">
+                <Text className="text-base font-medium text-green-600 dark:text-green-400">
+                  {isInitializing ? 'Chargement...' : 'Réessayer'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         )}
       </Animated.View>

@@ -309,12 +309,62 @@ describe('useStartTrial', () => {
       expect(result.current).toHaveProperty('isInitializing');
       expect(result.current).toHaveProperty('error');
       expect(result.current).toHaveProperty('product');
+      expect(result.current).toHaveProperty('canRetry');
       expect(result.current).toHaveProperty('handleStartTrial');
       expect(result.current).toHaveProperty('handleSkip');
+      expect(result.current).toHaveProperty('handleRetry');
 
       // Verify function types
       expect(typeof result.current.handleStartTrial).toBe('function');
       expect(typeof result.current.handleSkip).toBe('function');
+      expect(typeof result.current.handleRetry).toBe('function');
+    });
+  });
+
+  describe('Retry functionality', () => {
+    it('sets canRetry to true when initialization fails', async () => {
+      mockInitConnection.mockResolvedValue({
+        data: false,
+        error: { code: 'IAP_UNAVAILABLE', message: 'IAP not available' },
+      });
+
+      const { result } = renderHook(() => useStartTrial());
+
+      await waitFor(() => {
+        expect(result.current.isInitializing).toBe(false);
+      });
+
+      // canRetry should be true after failure
+      expect(result.current.canRetry).toBe(true);
+      expect(result.current.error).toBe('IAP not available');
+    });
+
+    it('exposes handleRetry function for error recovery', async () => {
+      mockInitConnection.mockResolvedValue({
+        data: false,
+        error: { code: 'IAP_UNAVAILABLE', message: 'IAP not available' },
+      });
+
+      const { result } = renderHook(() => useStartTrial());
+
+      // Wait for initial failure
+      await waitFor(() => {
+        expect(result.current.canRetry).toBe(true);
+      });
+
+      // handleRetry should be callable
+      expect(typeof result.current.handleRetry).toBe('function');
+
+      // Verify it can be called without error
+      // Note: Full retry flow is tested via integration tests
+      // because useCallback dependencies make mocking complex
+      await act(async () => {
+        // This will call the retry function
+        result.current.handleRetry();
+      });
+
+      // endConnection should have been called (cleanup before retry)
+      expect(mockEndConnection).toHaveBeenCalled();
     });
   });
 });

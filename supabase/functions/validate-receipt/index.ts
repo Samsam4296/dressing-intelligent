@@ -18,13 +18,125 @@
  * - SUPABASE_URL
  * - SUPABASE_SERVICE_ROLE_KEY
  * - APPLE_SHARED_SECRET (for App Store Connect)
- * - GOOGLE_SERVICE_ACCOUNT_KEY (for Google Play API)
+ * - GOOGLE_SERVICE_ACCOUNT_KEY (JSON string of service account)
+ * - ANDROID_PACKAGE_NAME (e.g., com.dressingintelligent.app)
  *
  * Note: console.* is used for logging as Sentry is not available in Deno Edge Functions.
  */
 
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+// ============================================
+// Google OAuth2 JWT Signing Utilities
+// ============================================
+
+/**
+ * Base64URL encode (RFC 4648)
+ */
+function base64UrlEncode(data: Uint8Array | string): string {
+  const base64 = typeof data === 'string'
+    ? btoa(data)
+    : btoa(String.fromCharCode(...data));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Import RSA private key from PEM format for signing
+ */
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  // Remove PEM headers and decode
+  const pemContents = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
+    .replace(/-----BEGIN RSA PRIVATE KEY-----/g, '')
+    .replace(/-----END RSA PRIVATE KEY-----/g, '')
+    .replace(/\s/g, '');
+
+  const binaryDer = Uint8Array.from(atob(pemContents), (c) => c.charCodeAt(0));
+
+  return await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  );
+}
+
+/**
+ * Create and sign a JWT for Google OAuth2
+ */
+async function createSignedJwt(
+  clientEmail: string,
+  privateKey: string,
+  scope: string
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+  };
+
+  const payload = {
+    iss: clientEmail,
+    scope: scope,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const encodedHeader = base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = base64UrlEncode(JSON.stringify(payload));
+  const signingInput = `${encodedHeader}.${encodedPayload}`;
+
+  // Import key and sign
+  const key = await importPrivateKey(privateKey);
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    key,
+    new TextEncoder().encode(signingInput)
+  );
+
+  const encodedSignature = base64UrlEncode(new Uint8Array(signature));
+
+  return `${signingInput}.${encodedSignature}`;
+}
+
+/**
+ * Get Google OAuth2 access token using service account
+ */
+async function getGoogleAccessToken(
+  clientEmail: string,
+  privateKey: string
+): Promise<string> {
+  const jwt = await createSignedJwt(
+    clientEmail,
+    privateKey,
+    'https://www.googleapis.com/auth/androidpublisher'
+  );
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to get access token: ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
 
 // CORS headers for preflight requests
 const corsHeaders = {
@@ -158,6 +270,19 @@ async function validateAppleReceipt(
     // Calculate trial end date (7 days from original purchase for trial)
     const trialEndsAt = isTrial ? expiresAt.toISOString() : null;
 
+    // Store only essential fields for audit (reduce raw_receipt size)
+    const auditReceipt = {
+      status: result.status,
+      latest_transaction: {
+        original_transaction_id: latestReceipt.original_transaction_id,
+        product_id: latestReceipt.product_id,
+        expires_date_ms: latestReceipt.expires_date_ms,
+        is_trial_period: latestReceipt.is_trial_period,
+        is_in_intro_offer_period: latestReceipt.is_in_intro_offer_period,
+      },
+      auto_renew_status: result.pending_renewal_info?.[0]?.auto_renew_status,
+    };
+
     return {
       valid: true,
       data: {
@@ -168,7 +293,7 @@ async function validateAppleReceipt(
         trial_ends_at: trialEndsAt,
         expires_at: expiresAt.toISOString(),
         auto_renewing: autoRenewing,
-        raw_receipt: result,
+        raw_receipt: auditReceipt,
       },
     };
   } catch (err) {
@@ -178,13 +303,15 @@ async function validateAppleReceipt(
 }
 
 /**
- * Validate Google Play receipt
+ * Validate Google Play receipt using Google Play Developer API
+ * Implements full server-side validation per NFR-I4
  */
 async function validateGoogleReceipt(
   receipt: string,
   productId: string
 ): Promise<{ valid: boolean; data?: Partial<SubscriptionData>; error?: string }> {
   const serviceAccountKey = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_KEY');
+  const packageName = Deno.env.get('ANDROID_PACKAGE_NAME') || 'com.dressingintelligent.app';
 
   if (!serviceAccountKey) {
     console.warn('GOOGLE_SERVICE_ACCOUNT_KEY not configured');
@@ -192,58 +319,77 @@ async function validateGoogleReceipt(
   }
 
   try {
-    // Parse the purchase token from receipt
+    // Parse the purchase data from receipt
     const purchaseData = JSON.parse(receipt);
     const purchaseToken = purchaseData.purchaseToken;
-    const packageName = purchaseData.packageName || 'com.dressingintelligent.app';
 
     if (!purchaseToken) {
-      return { valid: false, error: 'Invalid receipt format' };
+      return { valid: false, error: 'Invalid receipt format: missing purchaseToken' };
     }
 
     // Parse service account credentials
     const credentials = JSON.parse(serviceAccountKey);
 
-    // Create JWT for Google API authentication
-    const now = Math.floor(Date.now() / 1000);
-    const jwtHeader = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-    const jwtPayload = btoa(JSON.stringify({
-      iss: credentials.client_email,
-      scope: 'https://www.googleapis.com/auth/androidpublisher',
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600,
-    }));
+    if (!credentials.client_email || !credentials.private_key) {
+      console.error('Invalid service account credentials format');
+      return { valid: false, error: 'Server configuration error' };
+    }
 
-    // Note: In production, you'd sign this JWT with the private key
-    // For simplicity, using service account directly via token endpoint
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-        assertion: `${jwtHeader}.${jwtPayload}.SIGNATURE_PLACEHOLDER`,
-      }),
+    // Get OAuth2 access token using signed JWT
+    console.log('Obtaining Google OAuth2 access token...');
+    const accessToken = await getGoogleAccessToken(
+      credentials.client_email,
+      credentials.private_key
+    );
+
+    // Call Google Play Developer API to validate subscription
+    const apiUrl = `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${packageName}/purchases/subscriptions/${productId}/tokens/${purchaseToken}`;
+
+    console.log(`Validating subscription with Google Play API for product: ${productId}`);
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
     });
 
-    // Alternative: Use the credentials directly if available in different format
-    // This is a simplified version - production should use proper OAuth2 flow
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Google Play API error (${response.status}): ${errorText}`);
 
-    // For now, we'll validate the receipt structure and trust it's from Google
-    // In production, implement full Google Play Developer API validation
-    console.warn('Google receipt validation using simplified method - implement full API in production');
+      // Handle specific error codes
+      if (response.status === 404) {
+        return { valid: false, error: 'Purchase not found or invalid' };
+      }
+      if (response.status === 401 || response.status === 403) {
+        return { valid: false, error: 'Server authorization error' };
+      }
 
-    const purchaseTime = new Date(parseInt(purchaseData.purchaseTime || Date.now()));
-    const expiryTime = new Date(parseInt(purchaseData.expiryTimeMillis || (Date.now() + 7 * 24 * 60 * 60 * 1000)));
+      return { valid: false, error: 'Receipt validation failed' };
+    }
 
-    // Check for trial/intro period
-    const isTrial = purchaseData.isFreeTrial === true ||
-                    purchaseData.paymentState === 2; // 2 = pending/trial
+    const subscriptionPurchase: GooglePurchaseResponse = await response.json();
 
+    // Verify purchase state (0 = purchased, 1 = canceled, 2 = pending)
+    if (subscriptionPurchase.purchaseState !== 0) {
+      console.warn(`Invalid purchase state: ${subscriptionPurchase.purchaseState}`);
+      return { valid: false, error: 'Purchase not completed' };
+    }
+
+    // Verify payment state for subscriptions (1 = received, 2 = free trial, 3 = pending upgrade/downgrade)
+    const paymentState = subscriptionPurchase.paymentState;
+
+    // Calculate expiry time
+    const expiryTime = new Date(parseInt(subscriptionPurchase.expiryTimeMillis));
+    const now = new Date();
+
+    // Determine if in trial period (paymentState 2 = free trial)
+    const isTrial = paymentState === 2;
+
+    // Determine subscription status
     let status: SubscriptionData['status'];
-    const now2 = new Date();
-
-    if (expiryTime < now2) {
+    if (expiryTime < now) {
       status = 'expired';
     } else if (isTrial) {
       status = 'trial';
@@ -251,17 +397,30 @@ async function validateGoogleReceipt(
       status = 'active';
     }
 
+    console.log(`Google receipt validated: status=${status}, expires=${expiryTime.toISOString()}`);
+
+    // Store only essential fields from the response (reduce raw_receipt size)
+    const auditReceipt = {
+      orderId: subscriptionPurchase.orderId,
+      purchaseTimeMillis: subscriptionPurchase.purchaseTimeMillis,
+      purchaseState: subscriptionPurchase.purchaseState,
+      paymentState: subscriptionPurchase.paymentState,
+      expiryTimeMillis: subscriptionPurchase.expiryTimeMillis,
+      autoRenewing: subscriptionPurchase.autoRenewing,
+      acknowledgementState: subscriptionPurchase.acknowledgementState,
+    };
+
     return {
       valid: true,
       data: {
         status,
         product_id: productId,
         platform: 'android',
-        original_transaction_id: purchaseData.orderId || purchaseToken,
+        original_transaction_id: subscriptionPurchase.orderId,
         trial_ends_at: isTrial ? expiryTime.toISOString() : null,
         expires_at: expiryTime.toISOString(),
-        auto_renewing: purchaseData.autoRenewing !== false,
-        raw_receipt: purchaseData,
+        auto_renewing: subscriptionPurchase.autoRenewing,
+        raw_receipt: auditReceipt,
       },
     };
   } catch (err) {

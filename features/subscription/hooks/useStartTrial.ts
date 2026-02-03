@@ -36,10 +36,14 @@ interface UseStartTrialReturn {
   isInitializing: boolean;
   error: string | null;
   product: IAPProduct | null;
+  /** True if initialization failed and can be retried */
+  canRetry: boolean;
 
   // Actions
   handleStartTrial: () => Promise<void>;
   handleSkip: () => void;
+  /** Retry IAP initialization after failure */
+  handleRetry: () => Promise<void>;
 }
 
 // ============================================
@@ -67,10 +71,13 @@ export const useStartTrial = (): UseStartTrialReturn => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<IAPProduct | null>(null);
+  const [canRetry, setCanRetry] = useState(false);
 
   // Refs
   const purchaseListenerCleanup = useRef<(() => void) | null>(null);
   const isMounted = useRef(true);
+  // Track processed transactions to prevent race condition (listener + direct return)
+  const processedTransactions = useRef<Set<string>>(new Set());
 
   // Hooks
   const router = useRouter();
@@ -78,10 +85,23 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
   /**
    * Process successful purchase
+   * Uses transaction ID tracking to prevent duplicate processing (race condition fix)
    */
   const processPurchase = useCallback(
     async (purchase: SubscriptionPurchase) => {
       if (!isMounted.current) return;
+
+      // Get transaction ID for deduplication
+      const transactionId = purchase.transactionId || purchase.purchaseToken || '';
+
+      // Check if already processed (race condition: listener + direct return)
+      if (processedTransactions.current.has(transactionId)) {
+        console.log('Transaction already processed, skipping:', transactionId);
+        return;
+      }
+
+      // Mark as being processed
+      processedTransactions.current.add(transactionId);
 
       setIsPending(true);
       setError(null);
@@ -207,60 +227,88 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
   /**
    * Initialize IAP connection and fetch product
+   * Extracted as callback for retry functionality
    */
-  useEffect(() => {
-    const initializeIAP = async () => {
-      try {
-        // Initialize IAP connection
-        const { error: initError } = await iapService.initConnection();
+  const initializeIAP = useCallback(async () => {
+    if (!isMounted.current) return;
 
-        if (initError) {
-          if (isMounted.current) {
-            setError(initError.message);
-            setIsInitializing(false);
-          }
-          return;
-        }
+    setIsInitializing(true);
+    setError(null);
+    setCanRetry(false);
 
-        // Fetch product info (AC#1 - localized price)
-        const { data: products, error: productError } = await iapService.getProducts();
+    try {
+      // Initialize IAP connection
+      const { error: initError } = await iapService.initConnection();
 
-        if (productError || !products || products.length === 0) {
-          if (isMounted.current) {
-            // Don't show error, just use fallback price
-            Sentry.captureMessage('Failed to fetch product info', {
-              level: 'warning',
-              tags: { feature: 'subscription', action: 'getProducts' },
-            });
-            setIsInitializing(false);
-          }
-          return;
-        }
-
+      if (initError) {
         if (isMounted.current) {
-          setProduct(products[0]);
-        }
-
-        // Setup purchase listeners
-        purchaseListenerCleanup.current = iapService.setupPurchaseListeners(
-          processPurchase,
-          handlePurchaseError
-        );
-      } catch (err) {
-        Sentry.captureException(err, {
-          tags: { feature: 'subscription', action: 'initializeIAP' },
-        });
-
-        if (isMounted.current) {
-          setError("Les achats intégrés ne sont pas disponibles");
-        }
-      } finally {
-        if (isMounted.current) {
+          setError(initError.message);
+          setCanRetry(true); // Allow retry on init failure
           setIsInitializing(false);
         }
+        return;
       }
-    };
 
+      // Fetch product info (AC#1 - localized price)
+      const { data: products, error: productError } = await iapService.getProducts();
+
+      if (productError || !products || products.length === 0) {
+        if (isMounted.current) {
+          // Don't show error, just use fallback price
+          Sentry.captureMessage('Failed to fetch product info', {
+            level: 'warning',
+            tags: { feature: 'subscription', action: 'getProducts' },
+          });
+          setIsInitializing(false);
+        }
+        return;
+      }
+
+      if (isMounted.current) {
+        setProduct(products[0]);
+        setCanRetry(false); // Success, no need to retry
+      }
+
+      // Setup purchase listeners
+      purchaseListenerCleanup.current = iapService.setupPurchaseListeners(
+        processPurchase,
+        handlePurchaseError
+      );
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { feature: 'subscription', action: 'initializeIAP' },
+      });
+
+      if (isMounted.current) {
+        setError("Les achats intégrés ne sont pas disponibles");
+        setCanRetry(true); // Allow retry on exception
+      }
+    } finally {
+      if (isMounted.current) {
+        setIsInitializing(false);
+      }
+    }
+  }, [processPurchase, handlePurchaseError]);
+
+  /**
+   * Retry initialization after failure
+   */
+  const handleRetry = useCallback(async () => {
+    // Clean up previous connection attempt
+    if (purchaseListenerCleanup.current) {
+      purchaseListenerCleanup.current();
+      purchaseListenerCleanup.current = null;
+    }
+    await iapService.endConnection();
+
+    // Retry initialization
+    await initializeIAP();
+  }, [initializeIAP]);
+
+  /**
+   * Initial IAP setup on mount
+   */
+  useEffect(() => {
     initializeIAP();
 
     // Cleanup on unmount
@@ -273,7 +321,7 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
       iapService.endConnection();
     };
-  }, [processPurchase, handlePurchaseError]);
+  }, [initializeIAP]);
 
   /**
    * Handle start trial button press (AC#2)
@@ -355,9 +403,11 @@ export const useStartTrial = (): UseStartTrialReturn => {
     isInitializing,
     error,
     product,
+    canRetry,
 
     // Actions
     handleStartTrial,
     handleSkip,
+    handleRetry,
   };
 };
