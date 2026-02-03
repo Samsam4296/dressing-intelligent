@@ -15,7 +15,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
-import { useSyncPendingSwitch, useValidateActiveProfile } from '@/features/profiles';
+import {
+  useSyncPendingSwitch,
+  useValidateActiveProfile,
+  ProfileIndicator,
+} from '@/features/profiles';
 
 export default function TabsLayout() {
   const { colorScheme } = useColorScheme();
@@ -30,7 +34,13 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: isDark ? '#111827' : '#FFFFFF',
+        },
+        headerTintColor: isDark ? '#FFFFFF' : '#111827',
+        headerShadowVisible: false,
+        headerRight: () => <ProfileIndicator />,
         tabBarActiveTintColor: isDark ? '#60A5FA' : '#3B82F6',
         tabBarInactiveTintColor: isDark ? '#6B7280' : '#9CA3AF',
         tabBarStyle: {

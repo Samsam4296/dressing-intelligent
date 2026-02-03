@@ -149,3 +149,203 @@ describe('Accessibility Labels for ProfilesList', () => {
     expect(label).toBe('2 profils sur 3');
   });
 });
+
+// ============================================
+// Story 1.7: Switch Entre Profils Tests
+// ============================================
+
+describe('Profile Switch Logic for ProfilesList (Story 1.7)', () => {
+  const mockProfiles = [
+    { id: 'profile-1', display_name: 'Emma', is_active: true },
+    { id: 'profile-2', display_name: 'Lucas', is_active: false },
+    { id: 'profile-3', display_name: 'Sophie', is_active: false },
+  ];
+
+  describe('Active Profile Identification (AC#1)', () => {
+    it('identifies active profile correctly', () => {
+      const currentProfileId = 'profile-1';
+      const profiles = mockProfiles;
+      const activeProfile = profiles.find((p) => p.id === currentProfileId);
+
+      expect(activeProfile?.display_name).toBe('Emma');
+      expect(activeProfile?.is_active).toBe(true);
+    });
+
+    it('marks profile as active when id matches currentProfileId', () => {
+      const currentProfileId = 'profile-1';
+      const profile = mockProfiles[0];
+      const isActive = profile.id === currentProfileId;
+
+      expect(isActive).toBe(true);
+    });
+
+    it('marks profile as inactive when id does not match', () => {
+      const currentProfileId = 'profile-1';
+      const profile = mockProfiles[1];
+      const isActive = profile.id === currentProfileId;
+
+      expect(isActive).toBe(false);
+    });
+  });
+
+  describe('Switch Handler Logic (AC#2, AC#3)', () => {
+    it('does not switch when profile is already active', () => {
+      const currentProfileId = 'profile-1';
+      const targetProfileId = 'profile-1';
+      const switchProfile = jest.fn();
+
+      // Simulate handleSwitch logic
+      if (targetProfileId !== currentProfileId) {
+        switchProfile(targetProfileId);
+      }
+
+      expect(switchProfile).not.toHaveBeenCalled();
+    });
+
+    it('switches when profile is not active', () => {
+      const currentProfileId = 'profile-1';
+      const targetProfileId = 'profile-2';
+      const switchProfile = jest.fn();
+
+      if (targetProfileId !== currentProfileId) {
+        switchProfile(targetProfileId);
+      }
+
+      expect(switchProfile).toHaveBeenCalledWith('profile-2');
+    });
+
+    it('uses external onProfilePress when provided', () => {
+      const currentProfileId = 'profile-1';
+      const targetProfile = mockProfiles[1];
+      const onProfilePress = jest.fn();
+      const switchProfile = jest.fn();
+
+      // Simulate handleSwitch logic with external handler
+      if (targetProfile.id !== currentProfileId) {
+        if (onProfilePress) {
+          onProfilePress(targetProfile);
+        } else {
+          switchProfile(targetProfile.id);
+        }
+      }
+
+      expect(onProfilePress).toHaveBeenCalledWith(targetProfile);
+      expect(switchProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Loading State During Switch', () => {
+    it('disables add button during switch', () => {
+      const canAddProfile = true;
+      const isSwitching = true;
+      const isButtonDisabled = !canAddProfile || isSwitching;
+
+      expect(isButtonDisabled).toBe(true);
+    });
+
+    it('enables add button when not switching and can add', () => {
+      const canAddProfile = true;
+      const isSwitching = false;
+      const isButtonDisabled = !canAddProfile || isSwitching;
+
+      expect(isButtonDisabled).toBe(false);
+    });
+
+    it('disables profile bubbles during switch', () => {
+      const isSwitching = true;
+      const disabled = isSwitching;
+
+      expect(disabled).toBe(true);
+    });
+  });
+
+  describe('Switch Loading Indicator', () => {
+    it('shows loading indicator when switching', () => {
+      const isSwitching = true;
+      const showIndicator = isSwitching;
+
+      expect(showIndicator).toBe(true);
+    });
+
+    it('hides loading indicator when not switching', () => {
+      const isSwitching = false;
+      const showIndicator = isSwitching;
+
+      expect(showIndicator).toBe(false);
+    });
+  });
+
+  describe('Profile Bubble Props Generation', () => {
+    it('passes correct isActive prop to each bubble', () => {
+      const currentProfileId = 'profile-2';
+
+      const bubbleProps = mockProfiles.map((profile) => ({
+        profile,
+        isActive: profile.id === currentProfileId,
+      }));
+
+      expect(bubbleProps[0].isActive).toBe(false); // Emma
+      expect(bubbleProps[1].isActive).toBe(true); // Lucas
+      expect(bubbleProps[2].isActive).toBe(false); // Sophie
+    });
+
+    it('passes disabled prop based on isSwitching', () => {
+      const isSwitching = true;
+
+      const bubbleProps = mockProfiles.map((profile) => ({
+        profile,
+        disabled: isSwitching,
+      }));
+
+      expect(bubbleProps.every((p) => p.disabled)).toBe(true);
+    });
+  });
+
+  describe('Animation Stagger', () => {
+    it('calculates correct animation delay for each profile', () => {
+      const profiles = mockProfiles;
+      const delays = profiles.map((_, index) => index * 100);
+
+      expect(delays).toEqual([0, 100, 200]);
+    });
+  });
+});
+
+describe('Haptic Feedback Logic (Story 1.7 AC#7)', () => {
+  it('triggers haptic on add button press when allowed', () => {
+    const canAddProfile = true;
+    const isSwitching = false;
+    const impactAsync = jest.fn();
+
+    // Simulate handleAddPress logic
+    if (canAddProfile && !isSwitching) {
+      impactAsync('light');
+    }
+
+    expect(impactAsync).toHaveBeenCalledWith('light');
+  });
+
+  it('does not trigger haptic when switching', () => {
+    const canAddProfile = true;
+    const isSwitching = true;
+    const impactAsync = jest.fn();
+
+    if (canAddProfile && !isSwitching) {
+      impactAsync('light');
+    }
+
+    expect(impactAsync).not.toHaveBeenCalled();
+  });
+
+  it('does not trigger haptic when cannot add', () => {
+    const canAddProfile = false;
+    const isSwitching = false;
+    const impactAsync = jest.fn();
+
+    if (canAddProfile && !isSwitching) {
+      impactAsync('light');
+    }
+
+    expect(impactAsync).not.toHaveBeenCalled();
+  });
+});

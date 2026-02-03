@@ -151,7 +151,10 @@ export const switchProfileService = {
       captureError(error, 'profiles', 'switchProfile', { newProfileId });
 
       // Map error to user-friendly message
-      const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
+      // Handle both Error instances and Supabase error objects
+      const errorMessage = (
+        error instanceof Error ? error.message : (error as { message?: string })?.message || ''
+      ).toLowerCase();
 
       if (errorMessage.includes('not found') || errorMessage.includes('not owned')) {
         return {

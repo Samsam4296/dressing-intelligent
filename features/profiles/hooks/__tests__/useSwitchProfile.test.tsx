@@ -345,11 +345,16 @@ describe('useSwitchProfile', () => {
         wrapper: createWrapper(),
       });
 
-      act(() => {
+      await act(async () => {
         result.current.mutate(newProfileId);
+        // Allow React to process the mutation start
+        await Promise.resolve();
       });
 
-      expect(result.current.isPending).toBe(true);
+      // Check isPending becomes true while mutation is pending
+      await waitFor(() => {
+        expect(result.current.isPending).toBe(true);
+      });
 
       await act(async () => {
         resolvePromise!({
