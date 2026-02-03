@@ -13,9 +13,12 @@ module.exports = defineConfig([
       'android/*',
       'ios/*',
       'coverage/*',
-      '__tests__/*',
+      '**/__tests__/*', // All test directories (require() is valid in Jest)
+      '*.test.ts',
+      '*.test.tsx',
       'jest.setup.js',
       'jest.config.js',
+      'supabase/functions/*', // Deno Edge Functions use JSR imports
     ],
   },
   {

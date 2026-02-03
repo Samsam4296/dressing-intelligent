@@ -20,10 +20,10 @@ export default function HomeScreen() {
           <Text className="text-gray-600 dark:text-gray-400">Chargement...</Text>
         ) : (
           <>
-            <Text className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <Text className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
               Bonjour{profile?.display_name ? `, ${profile.display_name}` : ''} !
             </Text>
-            <Text className="text-gray-600 dark:text-gray-400 text-center">
+            <Text className="text-center text-gray-600 dark:text-gray-400">
               Bienvenue dans Dressing Intelligent.{'\n'}
               Les recommandations arrivent bientôt !
             </Text>

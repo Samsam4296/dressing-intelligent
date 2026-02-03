@@ -81,7 +81,10 @@ export const hideToast = (): void => {
 // Toast Configuration
 // ============================================
 
-const TOAST_CONFIG: Record<ToastType, { icon: keyof typeof Ionicons.glyphMap; bgColor: string; iconColor: string }> = {
+const TOAST_CONFIG: Record<
+  ToastType,
+  { icon: keyof typeof Ionicons.glyphMap; bgColor: string; iconColor: string }
+> = {
   success: {
     icon: 'checkmark-circle',
     bgColor: 'bg-green-600',
@@ -177,26 +180,23 @@ export const Toast = () => {
   return (
     <Animated.View
       style={animatedStyle}
-      className="absolute top-12 left-4 right-4 z-50"
+      className="absolute left-4 right-4 top-12 z-50"
       accessibilityRole="alert"
-      accessibilityLiveRegion="polite"
-    >
+      accessibilityLiveRegion="polite">
       <Pressable
-        className={`flex-row items-center p-4 rounded-xl shadow-lg min-h-[56px] ${config.bgColor}`}
+        className={`min-h-[56px] flex-row items-center rounded-xl p-4 shadow-lg ${config.bgColor}`}
         onPress={handleHide}
         accessibilityRole="button"
         accessibilityLabel="Fermer la notification"
-        testID="toast-container"
-      >
+        testID="toast-container">
         <Ionicons name={config.icon} size={24} color={config.iconColor} />
         <Text
-          className="flex-1 ml-3 text-white font-medium text-base"
+          className="ml-3 flex-1 text-base font-medium text-white"
           numberOfLines={2}
-          testID="toast-message"
-        >
+          testID="toast-message">
           {message}
         </Text>
-        <View className="min-w-[44px] min-h-[44px] items-center justify-center">
+        <View className="min-h-[44px] min-w-[44px] items-center justify-center">
           <Ionicons name="close" size={20} color="#FFFFFF" />
         </View>
       </Pressable>

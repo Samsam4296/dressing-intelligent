@@ -29,15 +29,14 @@
  * Supabase captures these logs in the Edge Functions dashboard.
  */
 
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // CORS headers for preflight requests
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 /**
@@ -46,26 +45,27 @@ const corsHeaders = {
 async function sendDeletionConfirmationEmail(
   email: string
 ): Promise<{ success: boolean; error?: string }> {
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  const emailFrom = Deno.env.get("EMAIL_FROM") || "Dressing Intelligent <noreply@dressingintelligent.com>";
+  const resendApiKey = Deno.env.get('RESEND_API_KEY');
+  const emailFrom =
+    Deno.env.get('EMAIL_FROM') || 'Dressing Intelligent <noreply@dressingintelligent.com>';
 
   // If no Resend API key, skip email (graceful degradation - Issue #1)
   if (!resendApiKey) {
-    console.warn("RESEND_API_KEY not configured - skipping confirmation email");
+    console.warn('RESEND_API_KEY not configured - skipping confirmation email');
     return { success: true };
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         from: emailFrom,
         to: [email],
-        subject: "Confirmation de suppression de votre compte",
+        subject: 'Confirmation de suppression de votre compte',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h1 style="color: #1f2937;">Compte supprimé</h1>
@@ -108,7 +108,7 @@ async function sendDeletionConfirmationEmail(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Email sending failed",
+      error: err instanceof Error ? err.message : 'Email sending failed',
     };
   }
 }
@@ -132,8 +132,8 @@ async function deleteStorageFiles(
       if (listError) {
         // Bucket might not exist or be empty - not an error
         if (
-          listError.message.includes("not found") ||
-          listError.message.includes("does not exist")
+          listError.message.includes('not found') ||
+          listError.message.includes('does not exist')
         ) {
           return [];
         }
@@ -174,9 +174,7 @@ async function deleteStorageFiles(
     const batchSize = 100;
     for (let i = 0; i < allFilePaths.length; i += batchSize) {
       const batch = allFilePaths.slice(i, i + batchSize);
-      const { error: deleteError } = await supabaseAdmin.storage
-        .from(bucketName)
-        .remove(batch);
+      const { error: deleteError } = await supabaseAdmin.storage.from(bucketName).remove(batch);
 
       if (deleteError) {
         console.error(`Failed to delete batch ${i / batchSize + 1}: ${deleteError.message}`);
@@ -188,14 +186,14 @@ async function deleteStorageFiles(
   } catch (err) {
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Unknown error",
+      error: err instanceof Error ? err.message : 'Unknown error',
     };
   }
 }
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight request
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: corsHeaders,
@@ -203,38 +201,35 @@ Deno.serve(async (req: Request) => {
   }
 
   // Only allow POST
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 
   try {
     // Get environment variables
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!supabaseUrl || !serviceRoleKey) {
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Get JWT from Authorization header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const jwt = authHeader.replace("Bearer ", "");
+    // Get JWT from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Missing authorization' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const jwt = authHeader.replace('Bearer ', '');
 
     // Create admin client with service role
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
@@ -251,9 +246,9 @@ Deno.serve(async (req: Request) => {
     } = await supabaseAdmin.auth.getUser(jwt);
 
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
@@ -261,22 +256,14 @@ Deno.serve(async (req: Request) => {
     const userEmail = user.email; // Store email before deletion for confirmation
 
     // Step 1: Delete files from 'avatars' bucket
-    const avatarsResult = await deleteStorageFiles(
-      supabaseAdmin,
-      "avatars",
-      userId
-    );
+    const avatarsResult = await deleteStorageFiles(supabaseAdmin, 'avatars', userId);
     if (!avatarsResult.success) {
       console.error(`Failed to delete avatars: ${avatarsResult.error}`);
       // Continue anyway - don't block deletion for storage issues
     }
 
     // Step 2: Delete files from 'clothes-photos' bucket
-    const clothesResult = await deleteStorageFiles(
-      supabaseAdmin,
-      "clothes-photos",
-      userId
-    );
+    const clothesResult = await deleteStorageFiles(supabaseAdmin, 'clothes-photos', userId);
     if (!clothesResult.success) {
       console.error(`Failed to delete clothes-photos: ${clothesResult.error}`);
       // Continue anyway - don't block deletion for storage issues
@@ -285,9 +272,9 @@ Deno.serve(async (req: Request) => {
     // Step 3: Delete profiles (CASCADE will handle clothes, recommendations)
     // Note: We use admin client to bypass RLS for complete deletion
     const { error: profilesError } = await supabaseAdmin
-      .from("profiles")
+      .from('profiles')
       .delete()
-      .eq("user_id", userId);
+      .eq('user_id', userId);
 
     if (profilesError) {
       console.error(`Failed to delete profiles: ${profilesError.message}`);
@@ -295,18 +282,17 @@ Deno.serve(async (req: Request) => {
     }
 
     // Step 4: Delete user from auth (this cascades to user_settings, user_consents)
-    const { error: deleteUserError } =
-      await supabaseAdmin.auth.admin.deleteUser(userId);
+    const { error: deleteUserError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteUserError) {
       return new Response(
         JSON.stringify({
-          error: "Failed to delete account",
+          error: 'Failed to delete account',
           details: deleteUserError.message,
         }),
         {
           status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
@@ -324,24 +310,24 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Account deleted successfully",
+        message: 'Account deleted successfully',
         emailSent: !!userEmail,
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (err) {
-    console.error("Unexpected error:", err);
+    console.error('Unexpected error:', err);
     return new Response(
       JSON.stringify({
-        error: "Internal server error",
-        details: err instanceof Error ? err.message : "Unknown error",
+        error: 'Internal server error',
+        details: err instanceof Error ? err.message : 'Unknown error',
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }

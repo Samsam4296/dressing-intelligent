@@ -49,8 +49,7 @@ export default function TabsLayout() {
           backgroundColor: isDark ? '#111827' : '#FFFFFF',
           borderTopColor: isDark ? '#374151' : '#E5E7EB',
         },
-      }}
-    >
+      }}>
       <Tabs.Screen
         name="index"
         options={{

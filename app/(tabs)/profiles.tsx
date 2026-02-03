@@ -26,24 +26,19 @@ function ProfilesErrorFallback({ resetError }: { resetError: () => void }) {
 
   return (
     <View className="flex-1 items-center justify-center p-6">
-      <Ionicons
-        name="alert-circle-outline"
-        size={64}
-        color={isDark ? '#EF4444' : '#DC2626'}
-      />
-      <Text className="text-xl font-bold text-gray-900 dark:text-white mt-4 text-center">
+      <Ionicons name="alert-circle-outline" size={64} color={isDark ? '#EF4444' : '#DC2626'} />
+      <Text className="mt-4 text-center text-xl font-bold text-gray-900 dark:text-white">
         Une erreur est survenue
       </Text>
-      <Text className="text-gray-500 dark:text-gray-400 mt-2 text-center">
+      <Text className="mt-2 text-center text-gray-500 dark:text-gray-400">
         Impossible de charger les profils. Veuillez réessayer.
       </Text>
       <Pressable
-        className="mt-6 bg-blue-600 dark:bg-blue-500 px-6 py-3 rounded-xl min-h-[48px] items-center justify-center"
+        className="mt-6 min-h-[48px] items-center justify-center rounded-xl bg-blue-600 px-6 py-3 dark:bg-blue-500"
         onPress={resetError}
         accessibilityRole="button"
-        accessibilityLabel="Réessayer"
-      >
-        <Text className="text-white font-semibold">Réessayer</Text>
+        accessibilityLabel="Réessayer">
+        <Text className="font-semibold text-white">Réessayer</Text>
       </Pressable>
     </View>
   );
@@ -85,21 +80,18 @@ export default function ProfilesScreen() {
   };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-white dark:bg-gray-900"
-      testID="profiles-screen"
-    >
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" testID="profiles-screen">
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={isDark ? '#111827' : '#FFFFFF'}
       />
 
       {/* Header */}
-      <View className="px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+      <View className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         <Text className="text-2xl font-bold text-gray-900 dark:text-white">
           Gestion des profils
         </Text>
-        <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Gérez les profils de votre famille
         </Text>
       </View>
@@ -108,19 +100,15 @@ export default function ProfilesScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
+        contentContainerStyle={{ paddingBottom: 20 }}>
         <Sentry.ErrorBoundary
           fallback={({ resetError }) => <ProfilesErrorFallback resetError={resetError} />}
           onError={(error) => {
             Sentry.captureException(error, {
               tags: { feature: 'profiles', component: 'ProfilesList' },
             });
-          }}
-        >
-          <ProfilesList
-            onAddProfile={handleOpenAddModal}
-          />
+          }}>
+          <ProfilesList onAddProfile={handleOpenAddModal} />
         </Sentry.ErrorBoundary>
       </ScrollView>
 

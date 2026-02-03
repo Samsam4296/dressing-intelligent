@@ -27,12 +27,7 @@ import {
   Platform,
 } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideOutDown,
-} from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { AvatarPicker } from './AvatarPicker';
 import { useEditProfile } from '../hooks/useEditProfile';
@@ -109,14 +104,12 @@ export const EditProfileModal = ({
       transparent
       animationType="none"
       onRequestClose={resetAndClose}
-      statusBarTranslucent
-    >
+      statusBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        className="flex-1 bg-black/50 justify-end"
-      >
+        className="flex-1 justify-end bg-black/50">
         {/* Tap outside to close */}
         <Pressable
           className="flex-1"
@@ -130,57 +123,50 @@ export const EditProfileModal = ({
         <Animated.View
           entering={SlideInDown.springify().damping(20)}
           exiting={SlideOutDown.duration(200)}
-          className="bg-white dark:bg-gray-900 rounded-t-3xl"
-          testID="edit-profile-modal"
-        >
+          className="rounded-t-3xl bg-white dark:bg-gray-900"
+          testID="edit-profile-modal">
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-          >
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
             <View className="p-6">
               {/* Handle indicator */}
-              <View className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full self-center mb-4" />
+              <View className="mb-4 h-1 w-12 self-center rounded-full bg-gray-300 dark:bg-gray-700" />
 
               {/* Header */}
-              <View className="flex-row justify-between items-center mb-6">
+              <View className="mb-6 flex-row items-center justify-between">
                 <Text className="text-2xl font-bold text-gray-900 dark:text-white">
                   Modifier le profil
                 </Text>
                 <Pressable
                   onPress={resetAndClose}
-                  className="min-w-[44px] min-h-[44px] items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
+                  className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-gray-100 active:bg-gray-200 dark:bg-gray-800 dark:active:bg-gray-700"
                   accessibilityRole="button"
                   accessibilityLabel="Fermer"
-                  testID="close-edit-modal-button"
-                >
-                  <Ionicons
-                    name="close"
-                    size={24}
-                    color={isDark ? '#E5E7EB' : '#374151'}
-                  />
+                  testID="close-edit-modal-button">
+                  <Ionicons name="close" size={24} color={isDark ? '#E5E7EB' : '#374151'} />
                 </Pressable>
               </View>
 
               {/* Avatar Picker with current avatar pre-filled (AC#1, AC#4) */}
-              <View className="items-center mb-6">
+              <View className="mb-6 items-center">
                 <AvatarPicker
                   avatarUri={avatarUri}
                   onAvatarSelected={handleAvatarSelected}
                   isLoading={isPending}
                   size={96}
                 />
-                <Text className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Appuyer pour modifier l'avatar
+                <Text className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Appuyer pour modifier l&apos;avatar
                 </Text>
               </View>
 
               {/* Name Input with validation (AC#1, AC#3) */}
               <Animated.View style={shakeStyle} className="mb-6">
-                <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                   Nom du profil
                 </Text>
                 <TextInput
-                  className={`h-14 px-4 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-900 dark:text-white text-base ${
+                  className={`h-14 rounded-xl bg-gray-100 px-4 text-base text-gray-900 dark:bg-gray-800 dark:text-white ${
                     !isValidName && name.length > 0
                       ? 'border-2 border-red-500'
                       : 'border border-gray-200 dark:border-gray-700'
@@ -199,30 +185,27 @@ export const EditProfileModal = ({
                   testID="edit-profile-name-input"
                 />
                 {/* Validation feedback (AC#3) */}
-                <View className="flex-row justify-between mt-2">
+                <View className="mt-2 flex-row justify-between">
                   <Text
                     className={`text-xs ${
                       !isValidName && name.length > 0
                         ? 'text-red-500 dark:text-red-400'
                         : 'text-gray-500 dark:text-gray-500'
                     }`}
-                    testID="edit-name-validation-message"
-                  >
+                    testID="edit-name-validation-message">
                     {!isValidName && name.length > 0
                       ? nameValidation.error
                       : 'Minimum 2 caractères'}
                   </Text>
-                  <Text className="text-xs text-gray-500 dark:text-gray-500">
-                    {name.length}/30
-                  </Text>
+                  <Text className="text-xs text-gray-500 dark:text-gray-500">{name.length}/30</Text>
                 </View>
               </Animated.View>
 
               {/* Save Button (AC#2, AC#3 - disabled if invalid) */}
               <Pressable
-                className={`min-h-[56px] rounded-xl justify-center items-center ${
+                className={`min-h-[56px] items-center justify-center rounded-xl ${
                   canSubmit
-                    ? 'bg-blue-600 dark:bg-blue-500 active:bg-blue-700 dark:active:bg-blue-600'
+                    ? 'bg-blue-600 active:bg-blue-700 dark:bg-blue-500 dark:active:bg-blue-600'
                     : 'bg-gray-300 dark:bg-gray-700'
                 }`}
                 onPress={handleSave}
@@ -234,21 +217,17 @@ export const EditProfileModal = ({
                   canSubmit
                     ? 'Appuyez pour enregistrer les modifications'
                     : hasChanges
-                    ? 'Corrigez les erreurs de validation'
-                    : "Modifiez le nom ou l'avatar pour activer ce bouton"
+                      ? 'Corrigez les erreurs de validation'
+                      : "Modifiez le nom ou l'avatar pour activer ce bouton"
                 }
-                testID="save-profile-button"
-              >
+                testID="save-profile-button">
                 {isPending ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
                   <Text
-                    className={`font-semibold text-lg ${
-                      canSubmit
-                        ? 'text-white'
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}
-                  >
+                    className={`text-lg font-semibold ${
+                      canSubmit ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
                     Enregistrer
                   </Text>
                 )}

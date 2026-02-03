@@ -97,7 +97,9 @@ describe('profileService', () => {
 
       const insertMock = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { ...mockProfile, is_active: true }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { ...mockProfile, is_active: true }, error: null }),
         }),
       });
 
@@ -107,9 +109,7 @@ describe('profileService', () => {
 
       await profileService.createProfile({ name: 'Emma' });
 
-      expect(insertMock).toHaveBeenCalledWith(
-        expect.objectContaining({ is_active: true })
-      );
+      expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ is_active: true }));
     });
 
     it('sets is_active=false for second profile', async () => {
@@ -121,7 +121,9 @@ describe('profileService', () => {
 
       const insertMock = jest.fn().mockReturnValue({
         select: jest.fn().mockReturnValue({
-          single: jest.fn().mockResolvedValue({ data: { ...mockProfile, is_active: false }, error: null }),
+          single: jest
+            .fn()
+            .mockResolvedValue({ data: { ...mockProfile, is_active: false }, error: null }),
         }),
       });
 
@@ -131,9 +133,7 @@ describe('profileService', () => {
 
       await profileService.createProfile({ name: 'Lucas' });
 
-      expect(insertMock).toHaveBeenCalledWith(
-        expect.objectContaining({ is_active: false })
-      );
+      expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({ is_active: false }));
     });
 
     it('returns CONFIG_ERROR when Supabase is not configured', async () => {

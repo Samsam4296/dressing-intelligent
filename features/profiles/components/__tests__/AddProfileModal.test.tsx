@@ -25,37 +25,43 @@ describe('Profile Name Validation for AddProfileModal', () => {
   describe('Name length validation (AC#3 - 2-30 characters)', () => {
     it('rejects empty name', () => {
       const name = '';
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(false);
     });
 
     it('rejects single character name', () => {
       const name = 'A';
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(false);
     });
 
     it('accepts minimum valid name (2 chars)', () => {
       const name = 'Em';
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(true);
     });
 
     it('accepts typical name', () => {
       const name = 'Emma';
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(true);
     });
 
     it('accepts maximum valid name (30 chars)', () => {
       const name = 'A'.repeat(30);
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(true);
     });
 
     it('rejects name exceeding maximum', () => {
       const name = 'A'.repeat(31);
-      const isValid = name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
+      const isValid =
+        name.trim().length >= MIN_NAME_LENGTH && name.trim().length <= MAX_NAME_LENGTH;
       expect(isValid).toBe(false);
     });
   });

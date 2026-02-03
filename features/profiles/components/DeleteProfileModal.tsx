@@ -67,12 +67,13 @@ export const DeleteProfileModal = ({
   const isDark = colorScheme === 'dark';
 
   // All state and logic is managed by the hook
-  const { isPending, canDelete, isLastProfile, handleDelete, resetAndClose } = useDeleteProfileModal({
-    profile,
-    profiles,
-    onClose,
-    onProfileDeleted,
-  });
+  const { isPending, canDelete, isLastProfile, handleDelete, resetAndClose } =
+    useDeleteProfileModal({
+      profile,
+      profiles,
+      onClose,
+      onProfileDeleted,
+    });
 
   // Don't render if no profile
   if (!profile) return null;
@@ -83,14 +84,12 @@ export const DeleteProfileModal = ({
       transparent
       animationType="none"
       onRequestClose={resetAndClose}
-      statusBarTranslucent
-    >
+      statusBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        className="flex-1 bg-black/50 justify-end"
-      >
+        className="flex-1 justify-end bg-black/50">
         {/* Tap outside to close */}
         <Pressable
           className="flex-1"
@@ -104,16 +103,15 @@ export const DeleteProfileModal = ({
         <Animated.View
           entering={SlideInDown.springify().damping(20)}
           exiting={SlideOutDown.duration(200)}
-          className="bg-white dark:bg-gray-900 rounded-t-3xl"
-          testID="delete-profile-modal"
-        >
+          className="rounded-t-3xl bg-white dark:bg-gray-900"
+          testID="delete-profile-modal">
           <View className="p-6">
             {/* Handle indicator */}
-            <View className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full self-center mb-4" />
+            <View className="mb-4 h-1 w-12 self-center rounded-full bg-gray-300 dark:bg-gray-700" />
 
             {/* Header with warning icon */}
-            <View className="flex-row items-center justify-center mb-4">
-              <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center mr-3">
+            <View className="mb-4 flex-row items-center justify-center">
+              <View className="mr-3 h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                 <Ionicons name="trash-outline" size={24} color="#EF4444" />
               </View>
               <Text className="text-xl font-bold text-gray-900 dark:text-white">
@@ -122,8 +120,8 @@ export const DeleteProfileModal = ({
             </View>
 
             {/* Profile name and warning (AC#1) */}
-            <View className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6">
-              <Text className="text-center text-lg text-gray-900 dark:text-white mb-2">
+            <View className="mb-6 rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
+              <Text className="mb-2 text-center text-lg text-gray-900 dark:text-white">
                 Voulez-vous supprimer le profil{' '}
                 <Text className="font-bold">&quot;{profile.display_name}&quot;</Text> ?
               </Text>
@@ -135,13 +133,9 @@ export const DeleteProfileModal = ({
 
             {/* Last profile warning (AC#4) */}
             {isLastProfile && (
-              <View className="flex-row items-center bg-yellow-50 dark:bg-yellow-900/30 rounded-xl p-4 mb-4">
-                <Ionicons
-                  name="warning-outline"
-                  size={24}
-                  color={isDark ? '#FBBF24' : '#D97706'}
-                />
-                <Text className="flex-1 ml-3 text-sm text-yellow-700 dark:text-yellow-300">
+              <View className="mb-4 flex-row items-center rounded-xl bg-yellow-50 p-4 dark:bg-yellow-900/30">
+                <Ionicons name="warning-outline" size={24} color={isDark ? '#FBBF24' : '#D97706'} />
+                <Text className="ml-3 flex-1 text-sm text-yellow-700 dark:text-yellow-300">
                   Vous devez conserver au moins un profil. La suppression est désactivée.
                 </Text>
               </View>
@@ -151,23 +145,22 @@ export const DeleteProfileModal = ({
             <View className="flex-row gap-3">
               {/* Cancel Button */}
               <Pressable
-                className="flex-1 min-h-[56px] rounded-xl justify-center items-center bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
+                className="min-h-[56px] flex-1 items-center justify-center rounded-xl bg-gray-100 active:bg-gray-200 dark:bg-gray-800 dark:active:bg-gray-700"
                 onPress={resetAndClose}
                 disabled={isPending}
                 accessibilityRole="button"
                 accessibilityLabel="Annuler la suppression"
-                testID="cancel-delete-button"
-              >
-                <Text className="font-semibold text-base text-gray-700 dark:text-gray-300">
+                testID="cancel-delete-button">
+                <Text className="text-base font-semibold text-gray-700 dark:text-gray-300">
                   Annuler
                 </Text>
               </Pressable>
 
               {/* Delete Button (Destructive) */}
               <Pressable
-                className={`flex-1 min-h-[56px] rounded-xl justify-center items-center ${
+                className={`min-h-[56px] flex-1 items-center justify-center rounded-xl ${
                   canDelete && !isPending
-                    ? 'bg-red-600 dark:bg-red-500 active:bg-red-700 dark:active:bg-red-600'
+                    ? 'bg-red-600 active:bg-red-700 dark:bg-red-500 dark:active:bg-red-600'
                     : 'bg-gray-300 dark:bg-gray-700'
                 }`}
                 onPress={handleDelete}
@@ -178,10 +171,9 @@ export const DeleteProfileModal = ({
                 accessibilityHint={
                   canDelete
                     ? 'Appuyez pour supprimer définitivement le profil'
-                    : 'Suppression désactivée car c\'est le dernier profil'
+                    : "Suppression désactivée car c'est le dernier profil"
                 }
-                testID="confirm-delete-button"
-              >
+                testID="confirm-delete-button">
                 {isPending ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
@@ -192,10 +184,9 @@ export const DeleteProfileModal = ({
                       color={canDelete ? '#FFFFFF' : isDark ? '#6B7280' : '#9CA3AF'}
                     />
                     <Text
-                      className={`ml-2 font-semibold text-base ${
+                      className={`ml-2 text-base font-semibold ${
                         canDelete ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
+                      }`}>
                       Supprimer
                     </Text>
                   </View>

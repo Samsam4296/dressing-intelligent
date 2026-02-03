@@ -104,7 +104,7 @@ const validateImage = (asset: ImagePicker.ImagePickerAsset): boolean => {
   if (asset.mimeType) {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(asset.mimeType.toLowerCase())) {
-      Alert.alert('Format non supporté', "Veuillez choisir une image JPEG, PNG ou WebP.");
+      Alert.alert('Format non supporté', 'Veuillez choisir une image JPEG, PNG ou WebP.');
       return false;
     }
   }
@@ -207,18 +207,13 @@ export const AvatarPicker = ({
     <View className="items-center">
       {/* Avatar Preview (Subtask 6.7: circular crop) */}
       <View
-        className="rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center overflow-hidden"
+        className="items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
         style={{ width: size, height: size }}
-        testID="avatar-preview"
-      >
+        testID="avatar-preview">
         {showLoading ? (
           <ActivityIndicator size="large" color={isDark ? '#60A5FA' : '#3B82F6'} />
         ) : avatarUri ? (
-          <Image
-            source={{ uri: avatarUri }}
-            className="w-full h-full"
-            testID="avatar-image"
-          />
+          <Image source={{ uri: avatarUri }} className="h-full w-full" testID="avatar-image" />
         ) : (
           // Subtask 6.8: Default avatar if no selection
           <Ionicons
@@ -231,43 +226,29 @@ export const AvatarPicker = ({
       </View>
 
       {/* Action Buttons (AC#9: Touch targets 44x44) */}
-      <View className="flex-row mt-4 gap-4">
+      <View className="mt-4 flex-row gap-4">
         {/* Gallery Button */}
         <Pressable
-          className="min-h-[44px] min-w-[44px] px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex-row items-center active:opacity-70"
+          className="min-h-[44px] min-w-[44px] flex-row items-center rounded-lg bg-gray-100 px-4 py-2 active:opacity-70 dark:bg-gray-800"
           onPress={pickFromGallery}
           disabled={showLoading}
           accessibilityRole="button"
           accessibilityLabel="Choisir depuis la galerie"
-          testID="gallery-button"
-        >
-          <Ionicons
-            name="images-outline"
-            size={20}
-            color={isDark ? '#9CA3AF' : '#6B7280'}
-          />
-          <Text className="ml-2 text-gray-700 dark:text-gray-300 text-sm font-medium">
-            Galerie
-          </Text>
+          testID="gallery-button">
+          <Ionicons name="images-outline" size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+          <Text className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Galerie</Text>
         </Pressable>
 
         {/* Camera Button */}
         <Pressable
-          className="min-h-[44px] min-w-[44px] px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg flex-row items-center active:opacity-70"
+          className="min-h-[44px] min-w-[44px] flex-row items-center rounded-lg bg-gray-100 px-4 py-2 active:opacity-70 dark:bg-gray-800"
           onPress={takePhoto}
           disabled={showLoading}
           accessibilityRole="button"
           accessibilityLabel="Prendre une photo"
-          testID="camera-button"
-        >
-          <Ionicons
-            name="camera-outline"
-            size={20}
-            color={isDark ? '#9CA3AF' : '#6B7280'}
-          />
-          <Text className="ml-2 text-gray-700 dark:text-gray-300 text-sm font-medium">
-            Photo
-          </Text>
+          testID="camera-button">
+          <Ionicons name="camera-outline" size={20} color={isDark ? '#9CA3AF' : '#6B7280'} />
+          <Text className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Photo</Text>
         </Pressable>
       </View>
     </View>

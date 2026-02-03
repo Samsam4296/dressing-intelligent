@@ -144,9 +144,7 @@ describe('useDeleteProfileModal', () => {
     expect(profileService.deleteProfile).not.toHaveBeenCalled();
 
     // Error haptic feedback
-    expect(Haptics.notificationAsync).toHaveBeenCalledWith(
-      Haptics.NotificationFeedbackType.Error
-    );
+    expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
   });
 
   it('calls onProfileDeleted before resetAndClose', async () => {

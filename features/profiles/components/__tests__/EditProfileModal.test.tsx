@@ -202,9 +202,7 @@ describe('EditProfileModal - Error Handling', () => {
 
   describe('optimistic update rollback on error', () => {
     it('provides previous state for rollback', () => {
-      const previousProfiles = [
-        { id: 'profile-123', display_name: 'Emma', avatar_url: null },
-      ];
+      const previousProfiles = [{ id: 'profile-123', display_name: 'Emma', avatar_url: null }];
       const previousActiveProfile = { id: 'profile-123', display_name: 'Emma', avatar_url: null };
 
       const context = { previousProfiles, previousActiveProfile };
@@ -361,8 +359,8 @@ describe('EditProfileModal - Accessibility', () => {
     const hint = canSubmit
       ? 'Appuyez pour enregistrer les modifications'
       : hasChanges
-      ? 'Corrigez les erreurs de validation'
-      : "Modifiez le nom ou l'avatar pour activer ce bouton";
+        ? 'Corrigez les erreurs de validation'
+        : "Modifiez le nom ou l'avatar pour activer ce bouton";
 
     expect(hint).toBe('Appuyez pour enregistrer les modifications');
   });
@@ -374,8 +372,8 @@ describe('EditProfileModal - Accessibility', () => {
     const hint = canSubmit
       ? 'Appuyez pour enregistrer les modifications'
       : hasChanges
-      ? 'Corrigez les erreurs de validation'
-      : "Modifiez le nom ou l'avatar pour activer ce bouton";
+        ? 'Corrigez les erreurs de validation'
+        : "Modifiez le nom ou l'avatar pour activer ce bouton";
 
     expect(hint).toContain('Modifiez');
   });

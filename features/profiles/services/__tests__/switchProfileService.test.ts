@@ -262,12 +262,9 @@ describe('switchProfileService', () => {
 
         await switchProfileService.switchProfile(mockNewProfileId);
 
-        expect(captureError).toHaveBeenCalledWith(
-          error,
-          'profiles',
-          'switchProfile',
-          { newProfileId: mockNewProfileId }
-        );
+        expect(captureError).toHaveBeenCalledWith(error, 'profiles', 'switchProfile', {
+          newProfileId: mockNewProfileId,
+        });
       });
     });
 

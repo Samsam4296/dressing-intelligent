@@ -40,6 +40,7 @@ import { useColorScheme } from 'nativewind';
 
 import { validateEmail } from '../hooks/useFormValidation';
 import { authService } from '../services/authService';
+import * as Sentry from '@sentry/react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -261,7 +262,8 @@ export const LoginScreen: React.FC = () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Navigation handled by auth state change in _layout.tsx
     } catch (err) {
-      // Unexpected error
+      // Log unexpected error (no PII logged)
+      Sentry.captureException(err, { tags: { feature: 'login' } });
       setErrors((prev) => ({
         ...prev,
         general: 'Une erreur inattendue est survenue',

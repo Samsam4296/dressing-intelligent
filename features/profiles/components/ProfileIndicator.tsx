@@ -64,40 +64,34 @@ export const ProfileIndicator = () => {
 
   return (
     <Pressable
-      className="flex-row items-center min-w-[44px] min-h-[44px] px-2 mr-2"
+      className="mr-2 min-h-[44px] min-w-[44px] flex-row items-center px-2"
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`Profil actif: ${currentProfile.display_name}. Appuyer pour gérer les profils.`}
       accessibilityHint="Navigue vers la gestion des profils"
-      testID="profile-indicator"
-    >
+      testID="profile-indicator">
       {/* Mini avatar */}
-      <View className="w-7 h-7 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
+      <View className="h-7 w-7 overflow-hidden rounded-full border border-gray-200 dark:border-gray-700">
         {currentProfile.avatar_url ? (
           <Image
             source={{ uri: currentProfile.avatar_url }}
-            className="w-full h-full"
+            className="h-full w-full"
             resizeMode="cover"
             testID="profile-indicator-avatar"
           />
         ) : (
-          <View className="w-full h-full bg-gray-200 dark:bg-gray-700 items-center justify-center">
-            <Ionicons
-              name="person"
-              size={14}
-              color={isDark ? '#9CA3AF' : '#6B7280'}
-            />
+          <View className="h-full w-full items-center justify-center bg-gray-200 dark:bg-gray-700">
+            <Ionicons name="person" size={14} color={isDark ? '#9CA3AF' : '#6B7280'} />
           </View>
         )}
       </View>
 
       {/* Name truncated */}
       <Text
-        className="ml-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 max-w-[60px]"
+        className="ml-1.5 max-w-[60px] text-sm font-medium text-gray-700 dark:text-gray-300"
         numberOfLines={1}
         ellipsizeMode="tail"
-        testID="profile-indicator-name"
-      >
+        testID="profile-indicator-name">
         {currentProfile.display_name}
       </Text>
 

@@ -50,26 +50,17 @@ interface DeleteAccountModalProps {
  * />
  * ```
  */
-export const DeleteAccountModal = ({
-  visible,
-  userEmail,
-  onClose,
-}: DeleteAccountModalProps) => {
+export const DeleteAccountModal = ({ visible, userEmail, onClose }: DeleteAccountModalProps) => {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
 
   // All state and logic is managed by the hook
-  const {
-    password,
-    isPending,
-    error,
-    setPassword,
-    handleDelete,
-    resetAndClose,
-  } = useDeleteAccount({
-    userEmail,
-    onClose,
-  });
+  const { password, isPending, error, setPassword, handleDelete, resetAndClose } = useDeleteAccount(
+    {
+      userEmail,
+      onClose,
+    }
+  );
 
   // Check if form is valid for submission
   const canSubmit = password.trim().length > 0 && !isPending;
@@ -80,14 +71,12 @@ export const DeleteAccountModal = ({
       transparent
       animationType="none"
       onRequestClose={resetAndClose}
-      statusBarTranslucent
-    >
+      statusBarTranslucent>
       {/* Backdrop */}
       <Animated.View
         entering={FadeIn.duration(200)}
         exiting={FadeOut.duration(200)}
-        className="flex-1 bg-black/50 justify-end"
-      >
+        className="flex-1 justify-end bg-black/50">
         {/* Tap outside to close (only if not pending) */}
         <Pressable
           className="flex-1"
@@ -101,16 +90,15 @@ export const DeleteAccountModal = ({
         <Animated.View
           entering={SlideInDown.springify().damping(20)}
           exiting={SlideOutDown.duration(200)}
-          className="bg-white dark:bg-gray-900 rounded-t-3xl"
-          testID="delete-account-modal"
-        >
+          className="rounded-t-3xl bg-white dark:bg-gray-900"
+          testID="delete-account-modal">
           <View className="p-6">
             {/* Handle indicator */}
-            <View className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full self-center mb-4" />
+            <View className="mb-4 h-1 w-12 self-center rounded-full bg-gray-300 dark:bg-gray-700" />
 
             {/* Header with warning icon */}
-            <View className="flex-row items-center justify-center mb-4">
-              <View className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 items-center justify-center mr-3">
+            <View className="mb-4 flex-row items-center justify-center">
+              <View className="mr-3 h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
                 <Ionicons name="warning-outline" size={24} color="#EF4444" />
               </View>
               <Text className="text-xl font-bold text-gray-900 dark:text-white">
@@ -119,9 +107,10 @@ export const DeleteAccountModal = ({
             </View>
 
             {/* Warning message */}
-            <View className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 mb-4">
+            <View className="mb-4 rounded-xl bg-red-50 p-4 dark:bg-red-900/20">
               <Text className="text-center text-sm font-medium text-red-700 dark:text-red-300">
-                Attention : Cette action est irréversible. Toutes vos données seront supprimées définitivement :
+                Attention : Cette action est irréversible. Toutes vos données seront supprimées
+                définitivement :
               </Text>
               <View className="mt-2">
                 <Text className="text-sm text-red-600 dark:text-red-400">
@@ -138,15 +127,15 @@ export const DeleteAccountModal = ({
 
             {/* Password input for re-authentication (AC#1) */}
             <View className="mb-4">
-              <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Confirmez votre mot de passe pour continuer
               </Text>
               <TextInput
-                className={`w-full h-12 px-4 rounded-xl border ${
+                className={`h-12 w-full rounded-xl border px-4 ${
                   error
                     ? 'border-red-500 dark:border-red-400'
                     : 'border-gray-300 dark:border-gray-600'
-                } bg-white dark:bg-gray-800 text-gray-900 dark:text-white`}
+                } bg-white text-gray-900 dark:bg-gray-800 dark:text-white`}
                 placeholder="Mot de passe"
                 placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
                 secureTextEntry
@@ -163,15 +152,13 @@ export const DeleteAccountModal = ({
 
             {/* Error message (AC#4) */}
             {error && (
-              <View className="flex-row items-center bg-red-50 dark:bg-red-900/30 rounded-xl p-3 mb-4">
+              <View className="mb-4 flex-row items-center rounded-xl bg-red-50 p-3 dark:bg-red-900/30">
                 <Ionicons
                   name="alert-circle-outline"
                   size={20}
                   color={isDark ? '#FCA5A5' : '#DC2626'}
                 />
-                <Text className="flex-1 ml-2 text-sm text-red-700 dark:text-red-300">
-                  {error}
-                </Text>
+                <Text className="ml-2 flex-1 text-sm text-red-700 dark:text-red-300">{error}</Text>
               </View>
             )}
 
@@ -179,23 +166,22 @@ export const DeleteAccountModal = ({
             <View className="flex-row gap-3">
               {/* Cancel Button */}
               <Pressable
-                className="flex-1 min-h-[56px] rounded-xl justify-center items-center bg-gray-100 dark:bg-gray-800 active:bg-gray-200 dark:active:bg-gray-700"
+                className="min-h-[56px] flex-1 items-center justify-center rounded-xl bg-gray-100 active:bg-gray-200 dark:bg-gray-800 dark:active:bg-gray-700"
                 onPress={resetAndClose}
                 disabled={isPending}
                 accessibilityRole="button"
                 accessibilityLabel="Annuler la suppression"
-                testID="cancel-delete-account-button"
-              >
-                <Text className="font-semibold text-base text-gray-700 dark:text-gray-300">
+                testID="cancel-delete-account-button">
+                <Text className="text-base font-semibold text-gray-700 dark:text-gray-300">
                   Annuler
                 </Text>
               </Pressable>
 
               {/* Delete Button (Destructive) */}
               <Pressable
-                className={`flex-1 min-h-[56px] rounded-xl justify-center items-center ${
+                className={`min-h-[56px] flex-1 items-center justify-center rounded-xl ${
                   canSubmit
-                    ? 'bg-red-600 dark:bg-red-500 active:bg-red-700 dark:active:bg-red-600'
+                    ? 'bg-red-600 active:bg-red-700 dark:bg-red-500 dark:active:bg-red-600'
                     : 'bg-gray-300 dark:bg-gray-700'
                 }`}
                 onPress={handleDelete}
@@ -208,8 +194,7 @@ export const DeleteAccountModal = ({
                     ? 'Appuyez pour supprimer définitivement votre compte'
                     : 'Entrez votre mot de passe pour activer ce bouton'
                 }
-                testID="confirm-delete-account-button"
-              >
+                testID="confirm-delete-account-button">
                 {isPending ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
@@ -220,10 +205,9 @@ export const DeleteAccountModal = ({
                       color={canSubmit ? '#FFFFFF' : isDark ? '#6B7280' : '#9CA3AF'}
                     />
                     <Text
-                      className={`ml-2 font-semibold text-base ${
+                      className={`ml-2 text-base font-semibold ${
                         canSubmit ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                      }`}
-                    >
+                      }`}>
                       Supprimer
                     </Text>
                   </View>

@@ -17,7 +17,7 @@ export default function CreateProfilePage() {
   // Show loading while checking profile status
   if (isLoading) {
     return (
-      <View className="flex-1 bg-white dark:bg-gray-900 items-center justify-center">
+      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
         <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );

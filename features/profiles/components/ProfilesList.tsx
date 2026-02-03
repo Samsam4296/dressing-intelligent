@@ -152,14 +152,9 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   // Loading state
   if (isLoading) {
     return (
-      <View className="p-4 items-center justify-center" testID="profiles-list-loading">
-        <ActivityIndicator
-          size="large"
-          color={isDark ? '#60A5FA' : '#3B82F6'}
-        />
-        <Text className="mt-2 text-gray-500 dark:text-gray-400">
-          Chargement des profils...
-        </Text>
+      <View className="items-center justify-center p-4" testID="profiles-list-loading">
+        <ActivityIndicator size="large" color={isDark ? '#60A5FA' : '#3B82F6'} />
+        <Text className="mt-2 text-gray-500 dark:text-gray-400">Chargement des profils...</Text>
       </View>
     );
   }
@@ -167,13 +162,9 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   // Error state
   if (error) {
     return (
-      <View className="p-4 items-center justify-center" testID="profiles-list-error">
-        <Ionicons
-          name="alert-circle-outline"
-          size={48}
-          color={isDark ? '#EF4444' : '#DC2626'}
-        />
-        <Text className="mt-2 text-red-600 dark:text-red-400 text-center">
+      <View className="items-center justify-center p-4" testID="profiles-list-error">
+        <Ionicons name="alert-circle-outline" size={48} color={isDark ? '#EF4444' : '#DC2626'} />
+        <Text className="mt-2 text-center text-red-600 dark:text-red-400">
           Erreur lors du chargement des profils
         </Text>
       </View>
@@ -181,30 +172,23 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   }
 
   return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      className="p-4"
-      testID="profiles-list-container"
-    >
+    <Animated.View entering={FadeIn.duration(300)} className="p-4" testID="profiles-list-container">
       {/* Header with counter (AC#2 Story 1.6) */}
-      <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-xl font-bold text-gray-900 dark:text-white">
-          Mes profils
-        </Text>
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="text-xl font-bold text-gray-900 dark:text-white">Mes profils</Text>
         <View className="flex-row items-center">
           <Text
             className="text-sm text-gray-500 dark:text-gray-400"
             testID="profile-counter"
-            accessibilityLabel={`${profileCount} profils sur ${MAX_PROFILES}`}
-          >
+            accessibilityLabel={`${profileCount} profils sur ${MAX_PROFILES}`}>
             {profileCount}/{MAX_PROFILES} profils
           </Text>
           {/* Visual indicator */}
-          <View className="flex-row ml-2">
+          <View className="ml-2 flex-row">
             {Array.from({ length: MAX_PROFILES }).map((_, index) => (
               <View
                 key={index}
-                className={`w-2 h-2 rounded-full mx-0.5 ${
+                className={`mx-0.5 h-2 w-2 rounded-full ${
                   index < profileCount
                     ? 'bg-blue-500 dark:bg-blue-400'
                     : 'bg-gray-300 dark:bg-gray-600'
@@ -216,16 +200,12 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
       </View>
 
       {/* Profiles list - horizontal wrap (AC#1, AC#2 Story 1.7) */}
-      <View
-        className="flex-row flex-wrap gap-4 mb-6"
-        testID="profiles-bubbles-container"
-      >
+      <View className="mb-6 flex-row flex-wrap gap-4" testID="profiles-bubbles-container">
         {profileList.map((profile, index) => (
           <Animated.View
             key={profile.id}
             entering={FadeInRight.delay(index * 100).duration(300)}
-            layout={Layout.springify()}
-          >
+            layout={Layout.springify()}>
             <ProfileBubble
               profile={profile}
               isActive={profile.id === currentProfileId}
@@ -241,9 +221,8 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
       {isSwitching && (
         <Animated.View
           entering={FadeIn.duration(200)}
-          className="flex-row items-center justify-center mb-4"
-          testID="switch-loading-indicator"
-        >
+          className="mb-4 flex-row items-center justify-center"
+          testID="switch-loading-indicator">
           <ActivityIndicator size="small" color={isDark ? '#60A5FA' : '#3B82F6'} />
           <Text className="ml-2 text-sm text-gray-500 dark:text-gray-400">
             Changement de profil...
@@ -253,18 +232,16 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
 
       {/* Add Profile Button (AC#1, AC#6 Story 1.6) */}
       <Pressable
-        className={`flex-row items-center justify-center py-4 px-6 rounded-xl min-h-[56px] ${
+        className={`min-h-[56px] flex-row items-center justify-center rounded-xl px-6 py-4 ${
           canAddProfile && !isSwitching
-            ? 'bg-blue-600 dark:bg-blue-500 active:bg-blue-700 dark:active:bg-blue-600'
-            : 'bg-gray-300 dark:bg-gray-700 opacity-50'
+            ? 'bg-blue-600 active:bg-blue-700 dark:bg-blue-500 dark:active:bg-blue-600'
+            : 'bg-gray-300 opacity-50 dark:bg-gray-700'
         }`}
         onPress={handleAddPress}
         disabled={!canAddProfile || isSwitching}
         accessibilityRole="button"
         accessibilityLabel={
-          canAddProfile
-            ? 'Ajouter un profil'
-            : 'Limite de profils atteinte, impossible d\'ajouter'
+          canAddProfile ? 'Ajouter un profil' : "Limite de profils atteinte, impossible d'ajouter"
         }
         accessibilityState={{ disabled: !canAddProfile || isSwitching }}
         accessibilityHint={
@@ -272,20 +249,16 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
             ? 'Appuyez pour créer un nouveau profil'
             : 'Vous avez atteint le nombre maximum de profils'
         }
-        testID="add-profile-button"
-      >
+        testID="add-profile-button">
         <Ionicons
           name="add-circle-outline"
           size={24}
           color={canAddProfile && !isSwitching ? '#FFFFFF' : isDark ? '#6B7280' : '#9CA3AF'}
         />
         <Text
-          className={`ml-2 font-semibold text-base ${
-            canAddProfile && !isSwitching
-              ? 'text-white'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-        >
+          className={`ml-2 text-base font-semibold ${
+            canAddProfile && !isSwitching ? 'text-white' : 'text-gray-500 dark:text-gray-400'
+          }`}>
           Ajouter un profil
         </Text>
       </Pressable>
@@ -294,15 +267,14 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
       {!canAddProfile && (
         <Animated.View
           entering={FadeIn.delay(200).duration(300)}
-          className="flex-row items-center justify-center mt-3"
-          testID="max-profiles-message"
-        >
+          className="mt-3 flex-row items-center justify-center"
+          testID="max-profiles-message">
           <Ionicons
             name="information-circle-outline"
             size={16}
             color={isDark ? '#9CA3AF' : '#6B7280'}
           />
-          <Text className="text-sm text-gray-500 dark:text-gray-400 text-center ml-1">
+          <Text className="ml-1 text-center text-sm text-gray-500 dark:text-gray-400">
             Nombre maximum de profils atteint (3)
           </Text>
         </Animated.View>

@@ -180,7 +180,8 @@ export const useUpdateProfile = () => {
             ? {
                 ...profile,
                 display_name: updates.name ?? profile.display_name,
-                avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : profile.avatar_url,
+                avatar_url:
+                  updates.avatarUrl !== undefined ? updates.avatarUrl : profile.avatar_url,
               }
             : profile
         );
@@ -192,7 +193,8 @@ export const useUpdateProfile = () => {
         queryClient.setQueryData(profileKeys.active(), {
           ...previousActiveProfile,
           display_name: updates.name ?? previousActiveProfile.display_name,
-          avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : previousActiveProfile.avatar_url,
+          avatar_url:
+            updates.avatarUrl !== undefined ? updates.avatarUrl : previousActiveProfile.avatar_url,
         });
       }
 
@@ -403,7 +405,10 @@ export const useSwitchProfile = () => {
 /**
  * Get pending profile switch stored for offline sync
  */
-export const getPendingSwitch = async (): Promise<{ profileId: string; timestamp: number } | null> => {
+export const getPendingSwitch = async (): Promise<{
+  profileId: string;
+  timestamp: number;
+} | null> => {
   return storageHelpers.getJSON<{ profileId: string; timestamp: number }>(PENDING_SWITCH_KEY);
 };
 

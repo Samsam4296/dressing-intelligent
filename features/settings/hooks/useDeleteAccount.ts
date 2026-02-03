@@ -55,7 +55,10 @@ interface UseDeleteAccountReturn {
 const mapDeleteAccountError = (error: string): string => {
   const lowerError = error.toLowerCase();
 
-  if (lowerError.includes('invalid login credentials') || lowerError.includes('invalid credentials')) {
+  if (
+    lowerError.includes('invalid login credentials') ||
+    lowerError.includes('invalid credentials')
+  ) {
     return 'Mot de passe incorrect';
   }
 
@@ -181,7 +184,9 @@ export const useDeleteAccount = ({
       }
 
       // Step 2: Get current session for Edge Function call
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
         setError('Session invalide. Veuillez vous reconnecter.');

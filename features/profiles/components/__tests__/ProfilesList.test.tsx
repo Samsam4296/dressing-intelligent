@@ -128,17 +128,13 @@ describe('Profile Management Logic for ProfilesList', () => {
 describe('Accessibility Labels for ProfilesList', () => {
   it('generates correct add button label when can add', () => {
     const canAdd = true;
-    const label = canAdd
-      ? 'Ajouter un profil'
-      : "Limite de profils atteinte, impossible d'ajouter";
+    const label = canAdd ? 'Ajouter un profil' : "Limite de profils atteinte, impossible d'ajouter";
     expect(label).toBe('Ajouter un profil');
   });
 
   it('generates correct add button label at limit', () => {
     const canAdd = false;
-    const label = canAdd
-      ? 'Ajouter un profil'
-      : "Limite de profils atteinte, impossible d'ajouter";
+    const label = canAdd ? 'Ajouter un profil' : "Limite de profils atteinte, impossible d'ajouter";
     expect(label).toContain('impossible');
   });
 

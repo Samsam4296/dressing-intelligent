@@ -502,7 +502,11 @@ export const profileService = {
         .createSignedUrl(filePath, 60 * 15); // 15 minutes
 
       if (signedError || !signedData?.signedUrl) {
-        captureError(signedError || new Error('No signed URL returned'), 'profiles', 'uploadAvatar');
+        captureError(
+          signedError || new Error('No signed URL returned'),
+          'profiles',
+          'uploadAvatar'
+        );
         return {
           data: null,
           error: {

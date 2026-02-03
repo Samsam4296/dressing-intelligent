@@ -58,9 +58,7 @@ export const useSyncPendingSwitch = () => {
                 extra: { profileId: pendingSwitch.profileId },
               });
 
-              const result = await switchProfileService.syncPendingSwitch(
-                pendingSwitch.profileId
-              );
+              const result = await switchProfileService.syncPendingSwitch(pendingSwitch.profileId);
 
               if (result.data) {
                 // Clear pending switch

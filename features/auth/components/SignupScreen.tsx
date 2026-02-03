@@ -45,6 +45,7 @@ import {
   type PasswordStrength,
 } from '../hooks/useFormValidation';
 import { authService } from '../services/authService';
+import * as Sentry from '@sentry/react-native';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -373,7 +374,7 @@ export const SignupScreen: React.FC = () => {
       router.push('/(auth)/verify-email');
     } catch (err) {
       // Log error for debugging (no PII logged)
-      console.error('Signup error:', err instanceof Error ? err.message : 'Unknown error');
+      Sentry.captureException(err, { tags: { feature: 'signup' } });
       setErrors((prev) => ({
         ...prev,
         general: 'Une erreur inattendue est survenue',

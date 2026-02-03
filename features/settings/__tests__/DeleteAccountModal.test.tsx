@@ -136,7 +136,8 @@ describe('DeleteAccountModal - Error Display (AC#4)', () => {
 
 describe('DeleteAccountModal - Warning Messages', () => {
   it('displays irreversibility warning', () => {
-    const warningMessage = 'Cette action est irréversible. Toutes vos données seront supprimées définitivement';
+    const warningMessage =
+      'Cette action est irréversible. Toutes vos données seront supprimées définitivement';
     expect(warningMessage).toContain('irréversible');
   });
 

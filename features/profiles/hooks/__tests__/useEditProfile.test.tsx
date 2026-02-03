@@ -431,9 +431,7 @@ describe('useEditProfile - Actions', () => {
     });
 
     expect(mockTriggerShake).toHaveBeenCalled();
-    expect(Haptics.notificationAsync).toHaveBeenCalledWith(
-      Haptics.NotificationFeedbackType.Error
-    );
+    expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
   });
 
   it('handleSave does nothing when no profile', () => {
@@ -471,9 +469,7 @@ describe('useEditProfile - Actions', () => {
 
     expect(result.current.avatarUri).toBe('new-uri.jpg');
     expect(result.current.avatarChanged).toBe(true);
-    expect(Haptics.impactAsync).toHaveBeenCalledWith(
-      Haptics.ImpactFeedbackStyle.Light
-    );
+    expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
   });
 
   it('resetAndClose resets form and calls onClose', () => {

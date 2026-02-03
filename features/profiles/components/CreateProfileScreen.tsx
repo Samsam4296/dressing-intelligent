@@ -11,14 +11,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useRouter } from 'expo-router';
@@ -221,24 +214,22 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
         className="flex-1"
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <View className="flex-1 justify-center px-6 py-8">
           {/* Header */}
-          <View className="items-center mb-8">
+          <View className="mb-8 items-center">
             <Text
-              className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-2"
-              accessibilityRole="header"
-            >
+              className="mb-2 text-center text-3xl font-bold text-gray-900 dark:text-white"
+              accessibilityRole="header">
               Créer votre profil
             </Text>
-            <Text className="text-gray-600 dark:text-gray-400 text-center text-base">
+            <Text className="text-center text-base text-gray-600 dark:text-gray-400">
               Personnalisez votre expérience
             </Text>
           </View>
 
           {/* Avatar Picker */}
-          <View className="items-center mb-8">
+          <View className="mb-8 items-center">
             <AvatarPicker
               avatarUri={avatarUri}
               onAvatarSelected={setAvatarUri}
@@ -249,15 +240,13 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
 
           {/* Name Input (AC#2: validation temps réel) */}
           <View className="mb-6">
-            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <Text className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
               Nom du profil
             </Text>
             <Animated.View style={inputAnimatedStyle}>
               <TextInput
-                className={`h-14 px-4 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-900 dark:text-white text-base ${
-                  errorMessage || (name.length > 0 && !isNameValid)
-                    ? 'border-2 border-red-500'
-                    : ''
+                className={`h-14 rounded-xl bg-gray-100 px-4 text-base text-gray-900 dark:bg-gray-800 dark:text-white ${
+                  errorMessage || (name.length > 0 && !isNameValid) ? 'border-2 border-red-500' : ''
                 }`}
                 placeholder="Emma, Lucas, Sophie..."
                 placeholderTextColor={isDark ? '#9CA3AF' : '#6B7280'}
@@ -276,19 +265,16 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
             </Animated.View>
 
             {/* Character count and validation feedback (AC#2) */}
-            <View className="flex-row justify-between items-center mt-2">
+            <View className="mt-2 flex-row items-center justify-between">
               <Text
                 className={`text-xs ${
                   name.length > 0 && !isNameValid
                     ? 'text-red-500'
                     : 'text-gray-500 dark:text-gray-500'
-                }`}
-              >
+                }`}>
                 {name.length > 0 && !isNameValid ? nameError : '2-30 caractères'}
               </Text>
-              <Text className="text-xs text-gray-500 dark:text-gray-500">
-                {name.length}/30
-              </Text>
+              <Text className="text-xs text-gray-500 dark:text-gray-500">{name.length}/30</Text>
             </View>
           </View>
 
@@ -297,9 +283,8 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
             <Animated.View
               entering={FadeIn.duration(200)}
               exiting={FadeOut.duration(200)}
-              className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
-            >
-              <Text className="text-red-600 dark:text-red-400 text-sm text-center">
+              className="mb-4 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
+              <Text className="text-center text-sm text-red-600 dark:text-red-400">
                 {errorMessage}
               </Text>
             </Animated.View>
@@ -308,31 +293,28 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
           {/* Submit Button (AC#9: min 44x44 touch target, using 56px height) */}
           <Animated.View style={buttonAnimatedStyle}>
             <Pressable
-              className={`min-h-[56px] rounded-xl justify-center items-center ${
+              className={`min-h-[56px] items-center justify-center rounded-xl ${
                 isLoading || !isNameValid || name.length === 0
                   ? 'bg-blue-300 dark:bg-blue-800'
-                  : 'bg-blue-600 dark:bg-blue-500 active:bg-blue-700'
+                  : 'bg-blue-600 active:bg-blue-700 dark:bg-blue-500'
               }`}
               onPress={handleCreateProfile}
               disabled={isLoading || !isNameValid || name.length === 0}
               accessibilityRole="button"
               accessibilityLabel="Créer le profil"
               accessibilityState={{ disabled: isLoading || !isNameValid }}
-              testID="create-profile-button"
-            >
+              testID="create-profile-button">
               {isLoading ? (
                 <ActivityIndicator color="white" />
               ) : (
-                <Text className="text-white font-semibold text-lg">
-                  Créer mon profil
-                </Text>
+                <Text className="text-lg font-semibold text-white">Créer mon profil</Text>
               )}
             </Pressable>
           </Animated.View>
 
           {/* Loading explanation */}
           {isLoading && (
-            <Text className="text-gray-500 dark:text-gray-400 text-center text-sm mt-3">
+            <Text className="mt-3 text-center text-sm text-gray-500 dark:text-gray-400">
               {isUploading ? "Upload de l'avatar..." : 'Création du profil...'}
             </Text>
           )}

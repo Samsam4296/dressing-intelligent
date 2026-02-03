@@ -19,11 +19,7 @@
 import { View, Text, Image, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import type { Profile } from '../types/profile.types';
 
@@ -145,9 +141,7 @@ export const ProfileBubble = ({
       onLongPress={handleLongPress}
       delayLongPress={500}
       disabled={!isInteractive}
-      className={`items-center min-w-[80px] min-h-[44px] relative ${
-        disabled ? 'opacity-50' : ''
-      }`}
+      className={`relative min-h-[44px] min-w-[80px] items-center ${disabled ? 'opacity-50' : ''}`}
       accessibilityRole="button"
       accessibilityLabel={`Profil ${profile.display_name}${isActive ? ', profil actif' : ', appuyer pour changer de profil'}`}
       accessibilityState={{ selected: isActive, disabled: !isInteractive }}
@@ -155,30 +149,25 @@ export const ProfileBubble = ({
         isActive && canLongPress
           ? 'Appui long pour modifier ce profil'
           : !isActive && canLongPress
-          ? 'Appuyer pour changer, appui long pour supprimer'
-          : isActive
-          ? 'Profil actuellement actif'
-          : 'Appuyer pour changer vers ce profil'
+            ? 'Appuyer pour changer, appui long pour supprimer'
+            : isActive
+              ? 'Profil actuellement actif'
+              : 'Appuyer pour changer vers ce profil'
       }
-      testID={`profile-bubble-${profile.id}`}
-    >
+      testID={`profile-bubble-${profile.id}`}>
       {/* Avatar Container with active indicator */}
       <View
-        className={`rounded-full items-center justify-center overflow-hidden ${
-          isActive
-            ? 'border-2 border-blue-500 dark:border-blue-400'
-            : 'border-2 border-transparent'
+        className={`items-center justify-center overflow-hidden rounded-full ${
+          isActive ? 'border-2 border-blue-500 dark:border-blue-400' : 'border-2 border-transparent'
         }`}
-        style={{ width: size + 4, height: size + 4 }}
-      >
+        style={{ width: size + 4, height: size + 4 }}>
         <View
-          className="rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center overflow-hidden"
-          style={{ width: size, height: size }}
-        >
+          className="items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
+          style={{ width: size, height: size }}>
           {profile.avatar_url ? (
             <Image
               source={{ uri: profile.avatar_url }}
-              className="w-full h-full"
+              className="h-full w-full"
               testID={`profile-avatar-${profile.id}`}
             />
           ) : (
@@ -194,24 +183,22 @@ export const ProfileBubble = ({
 
       {/* Profile Name */}
       <Text
-        className={`mt-2 text-sm text-center ${
+        className={`mt-2 text-center text-sm ${
           isActive
-            ? 'text-blue-600 dark:text-blue-400 font-semibold'
+            ? 'font-semibold text-blue-600 dark:text-blue-400'
             : 'text-gray-700 dark:text-gray-300'
         }`}
         numberOfLines={1}
         ellipsizeMode="tail"
-        style={{ maxWidth: size + 16 }}
-      >
+        style={{ maxWidth: size + 16 }}>
         {profile.display_name}
       </Text>
 
       {/* Active indicator badge */}
       {isActive && (
         <View
-          className="absolute -top-1 -right-1 bg-blue-500 dark:bg-blue-400 rounded-full items-center justify-center"
-          style={{ width: 20, height: 20 }}
-        >
+          className="absolute -right-1 -top-1 items-center justify-center rounded-full bg-blue-500 dark:bg-blue-400"
+          style={{ width: 20, height: 20 }}>
           <Ionicons name="checkmark" size={12} color="#FFFFFF" />
         </View>
       )}

@@ -11,17 +11,39 @@ jest.mock('react-native', () => {
     React.createElement('View', { testID, ...props }, children);
   const MockText = ({ children, testID, ...props }) =>
     React.createElement('Text', { testID, ...props }, children);
-  const MockTouchableOpacity = ({ children, testID, onPress, disabled, accessibilityRole, accessibilityLabel, accessibilityState, ...props }) =>
-    React.createElement('TouchableOpacity', {
-      testID,
-      onPress,
-      disabled,
-      accessibilityRole,
-      accessibilityLabel,
-      accessibilityState,
-      ...props
-    }, children);
-  const MockTextInput = ({ testID, value, onChangeText, placeholder, maxLength, accessibilityLabel, accessibilityHint, ...props }) =>
+  const MockTouchableOpacity = ({
+    children,
+    testID,
+    onPress,
+    disabled,
+    accessibilityRole,
+    accessibilityLabel,
+    accessibilityState,
+    ...props
+  }) =>
+    React.createElement(
+      'TouchableOpacity',
+      {
+        testID,
+        onPress,
+        disabled,
+        accessibilityRole,
+        accessibilityLabel,
+        accessibilityState,
+        ...props,
+      },
+      children
+    );
+  const MockTextInput = ({
+    testID,
+    value,
+    onChangeText,
+    placeholder,
+    maxLength,
+    accessibilityLabel,
+    accessibilityHint,
+    ...props
+  }) =>
     React.createElement('TextInput', {
       testID,
       value,
@@ -30,7 +52,7 @@ jest.mock('react-native', () => {
       maxLength,
       accessibilityLabel,
       accessibilityHint,
-      ...props
+      ...props,
     });
   const MockModal = ({ children, visible, testID, ...props }) =>
     visible ? React.createElement('Modal', { testID, ...props }, children) : null;

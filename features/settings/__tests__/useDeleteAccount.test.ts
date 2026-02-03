@@ -263,10 +263,17 @@ describe('useDeleteAccount', () => {
     it('manages isPending state correctly during deletion', async () => {
       // Setup: slow response
       mockSignInWithPassword.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({
-          data: { session: { access_token: 'test-token' } },
-          error: null,
-        }), 50))
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  data: { session: { access_token: 'test-token' } },
+                  error: null,
+                }),
+              50
+            )
+          )
       );
 
       mockGetSession.mockResolvedValue({

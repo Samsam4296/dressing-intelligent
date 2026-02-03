@@ -155,7 +155,8 @@ describe('DeleteProfileModal - Confirmation Message (AC#1)', () => {
   });
 
   it('includes warning about irreversibility', () => {
-    const warningMessage = 'Cette action est irréversible. Toutes les données associées seront supprimées.';
+    const warningMessage =
+      'Cette action est irréversible. Toutes les données associées seront supprimées.';
 
     expect(warningMessage).toContain('irréversible');
     expect(warningMessage).toContain('données associées');
