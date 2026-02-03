@@ -272,7 +272,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Note: continue-on-error allows CI to pass even if Sentry secrets aren't configured
       - name: Upload Source Maps to Sentry
+        continue-on-error: true
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
