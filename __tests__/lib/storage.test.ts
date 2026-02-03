@@ -1,52 +1,64 @@
 /**
  * Storage Tests
  *
- * Tests for MMKV storage configuration and helpers.
+ * Tests for AsyncStorage-based storage configuration and helpers.
  * @priority P1 - Foundation for app persistence
  */
 
-// Unmock '@/lib/storage' to test the real implementation
-// jest.setup.js mocks it globally, but we need the actual module here
-jest.unmock('@/lib/storage');
+// Reset modules to allow re-mocking
+jest.resetModules();
 
-// Create a shared store that persists across mock instances
-const mockStore = new Map<string, string>();
+// Mock AsyncStorage with a functional in-memory implementation
+jest.mock('@react-native-async-storage/async-storage', () => {
+  // Initialize store in module scope
+  const store = new Map<string, string>();
 
-// Mock MMKV with a persistent store
-jest.mock('react-native-mmkv', () => {
   return {
-    MMKV: jest.fn().mockImplementation(() => ({
-      getString: (key: string) => mockStore.get(key),
-      set: (key: string, value: string) => {
-        mockStore.set(key, value);
-      },
-      delete: (key: string) => {
-        mockStore.delete(key);
-      },
-      contains: (key: string) => mockStore.has(key),
-      clearAll: () => {
-        mockStore.clear();
-      },
-      getAllKeys: () => Array.from(mockStore.keys()),
-    })),
+    __esModule: true,
+    default: {
+      getItem: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+      setItem: jest.fn((key: string, value: string) => {
+        store.set(key, value);
+        return Promise.resolve();
+      }),
+      removeItem: jest.fn((key: string) => {
+        store.delete(key);
+        return Promise.resolve();
+      }),
+      clear: jest.fn(() => {
+        store.clear();
+        return Promise.resolve();
+      }),
+      getAllKeys: jest.fn(() => Promise.resolve(Array.from(store.keys()))),
+      multiGet: jest.fn((keys: string[]) =>
+        Promise.resolve(keys.map((key) => [key, store.get(key) ?? null]))
+      ),
+      multiSet: jest.fn((pairs: [string, string][]) => {
+        pairs.forEach(([key, value]) => store.set(key, value));
+        return Promise.resolve();
+      }),
+      multiRemove: jest.fn((keys: string[]) => {
+        keys.forEach((key) => store.delete(key));
+        return Promise.resolve();
+      }),
+      // Expose store for test cleanup
+      __store: store,
+    },
   };
 });
 
-// Mock Platform for encryption key logic
-jest.mock('react-native', () => ({
-  Platform: { OS: 'ios' },
-}));
+// Unmock the storage module to test the real implementation
+jest.unmock('@/lib/storage');
 
-// Set dev environment for storage initialization
-(global as any).__DEV__ = true;
-
-import { STORAGE_KEYS, zustandStorage, storageHelpers, storage } from '@/lib/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { STORAGE_KEYS, zustandStorage, storageHelpers } from '@/lib/storage';
 
 describe('Storage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
-    // Clear the mock store directly to ensure clean state between tests
-    mockStore.clear();
+    // Clear the mock store between tests using the exposed __store
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (AsyncStorage as any).__store?.clear();
   });
 
   describe('STORAGE_KEYS', () => {
@@ -72,34 +84,34 @@ describe('Storage', () => {
   });
 
   describe('zustandStorage', () => {
-    it('[P1] getItem returns null for non-existent key', () => {
+    it('[P1] getItem returns null for non-existent key', async () => {
       // GIVEN: Empty storage
       // WHEN: Getting a non-existent key
-      const result = zustandStorage.getItem('non-existent');
+      const result = await zustandStorage.getItem('non-existent');
 
       // THEN: Returns null
       expect(result).toBeNull();
     });
 
-    it('[P1] setItem and getItem work together', () => {
+    it('[P1] setItem and getItem work together', async () => {
       // GIVEN: A value to store
       const testValue = JSON.stringify({ test: 'data' });
 
       // WHEN: Setting and getting the value
-      zustandStorage.setItem('test-key', testValue);
-      const result = zustandStorage.getItem('test-key');
+      await zustandStorage.setItem('test-key', testValue);
+      const result = await zustandStorage.getItem('test-key');
 
       // THEN: Value is retrieved correctly
       expect(result).toBe(testValue);
     });
 
-    it('[P1] removeItem deletes the key', () => {
+    it('[P1] removeItem deletes the key', async () => {
       // GIVEN: An existing key
-      zustandStorage.setItem('to-remove', 'value');
+      await zustandStorage.setItem('to-remove', 'value');
 
       // WHEN: Removing the key
-      zustandStorage.removeItem('to-remove');
-      const result = zustandStorage.getItem('to-remove');
+      await zustandStorage.removeItem('to-remove');
+      const result = await zustandStorage.getItem('to-remove');
 
       // THEN: Key no longer exists
       expect(result).toBeNull();
@@ -107,33 +119,33 @@ describe('Storage', () => {
   });
 
   describe('storageHelpers.getJSON', () => {
-    it('[P1] returns parsed JSON for valid data', () => {
+    it('[P1] returns parsed JSON for valid data', async () => {
       // GIVEN: Valid JSON stored
       const testData = { name: 'test', count: 42 };
-      storage.set('json-key', JSON.stringify(testData));
+      await AsyncStorage.setItem('json-key', JSON.stringify(testData));
 
       // WHEN: Getting JSON
-      const result = storageHelpers.getJSON<typeof testData>('json-key');
+      const result = await storageHelpers.getJSON<typeof testData>('json-key');
 
       // THEN: Returns parsed object
       expect(result).toEqual(testData);
     });
 
-    it('[P1] returns null for non-existent key', () => {
+    it('[P1] returns null for non-existent key', async () => {
       // GIVEN: No stored data
       // WHEN: Getting JSON for non-existent key
-      const result = storageHelpers.getJSON('missing-key');
+      const result = await storageHelpers.getJSON('missing-key');
 
       // THEN: Returns null
       expect(result).toBeNull();
     });
 
-    it('[P1] returns null for invalid JSON', () => {
+    it('[P1] returns null for invalid JSON', async () => {
       // GIVEN: Invalid JSON stored
-      storage.set('invalid-json', 'not valid json {');
+      await AsyncStorage.setItem('invalid-json', 'not valid json {');
 
       // WHEN: Getting JSON
-      const result = storageHelpers.getJSON('invalid-json');
+      const result = await storageHelpers.getJSON('invalid-json');
 
       // THEN: Returns null (graceful handling)
       expect(result).toBeNull();
@@ -141,25 +153,25 @@ describe('Storage', () => {
   });
 
   describe('storageHelpers.setJSON', () => {
-    it('[P1] stores JSON serialized value', () => {
+    it('[P1] stores JSON serialized value', async () => {
       // GIVEN: An object to store
       const testData = { items: [1, 2, 3], active: true };
 
       // WHEN: Setting JSON
-      storageHelpers.setJSON('json-data', testData);
+      await storageHelpers.setJSON('json-data', testData);
 
       // THEN: Value is stored as JSON string
-      const stored = storage.getString('json-data');
+      const stored = await AsyncStorage.getItem('json-data');
       expect(stored).toBe(JSON.stringify(testData));
     });
 
-    it('[P1] handles nested objects', () => {
+    it('[P1] handles nested objects', async () => {
       // GIVEN: Nested object
       const nested = { user: { profile: { name: 'Test' } } };
 
       // WHEN: Setting and getting nested JSON
-      storageHelpers.setJSON('nested', nested);
-      const result = storageHelpers.getJSON<typeof nested>('nested');
+      await storageHelpers.setJSON('nested', nested);
+      const result = await storageHelpers.getJSON<typeof nested>('nested');
 
       // THEN: Nested structure is preserved
       expect(result).toEqual(nested);
@@ -167,21 +179,21 @@ describe('Storage', () => {
   });
 
   describe('storageHelpers.has', () => {
-    it('[P1] returns false for non-existent key', () => {
+    it('[P1] returns false for non-existent key', async () => {
       // GIVEN: Empty storage
       // WHEN: Checking for non-existent key
-      const result = storageHelpers.has('missing');
+      const result = await storageHelpers.has('missing');
 
       // THEN: Returns false
       expect(result).toBe(false);
     });
 
-    it('[P1] returns true for existing key', () => {
+    it('[P1] returns true for existing key', async () => {
       // GIVEN: Existing key
-      storage.set('exists', 'value');
+      await AsyncStorage.setItem('exists', 'value');
 
       // WHEN: Checking for existing key
-      const result = storageHelpers.has('exists');
+      const result = await storageHelpers.has('exists');
 
       // THEN: Returns true
       expect(result).toBe(true);
@@ -189,39 +201,39 @@ describe('Storage', () => {
   });
 
   describe('storageHelpers.clearAll', () => {
-    it('[P1] removes all stored data', () => {
+    it('[P1] removes all stored data', async () => {
       // GIVEN: Multiple stored keys
-      storage.set('key1', 'value1');
-      storage.set('key2', 'value2');
+      await AsyncStorage.setItem('key1', 'value1');
+      await AsyncStorage.setItem('key2', 'value2');
 
       // WHEN: Clearing all
-      storageHelpers.clearAll();
+      await storageHelpers.clearAll();
 
       // THEN: All keys are removed
-      expect(storageHelpers.has('key1')).toBe(false);
-      expect(storageHelpers.has('key2')).toBe(false);
+      expect(await storageHelpers.has('key1')).toBe(false);
+      expect(await storageHelpers.has('key2')).toBe(false);
     });
   });
 
   describe('storageHelpers.getAllKeys', () => {
-    it('[P1] returns empty array when no keys', () => {
+    it('[P1] returns empty array when no keys', async () => {
       // GIVEN: Empty storage
-      storage.clearAll();
+      await AsyncStorage.clear();
 
       // WHEN: Getting all keys
-      const keys = storageHelpers.getAllKeys();
+      const keys = await storageHelpers.getAllKeys();
 
       // THEN: Returns empty array
       expect(keys).toEqual([]);
     });
 
-    it('[P1] returns all stored keys', () => {
+    it('[P1] returns all stored keys', async () => {
       // GIVEN: Multiple stored keys
-      storage.set('alpha', 'a');
-      storage.set('beta', 'b');
+      await AsyncStorage.setItem('alpha', 'a');
+      await AsyncStorage.setItem('beta', 'b');
 
       // WHEN: Getting all keys
-      const keys = storageHelpers.getAllKeys();
+      const keys = await storageHelpers.getAllKeys();
 
       // THEN: All keys are returned
       expect(keys).toContain('alpha');
