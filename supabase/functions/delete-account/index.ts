@@ -22,7 +22,11 @@
  * Environment variables required:
  * - SUPABASE_URL
  * - SUPABASE_SERVICE_ROLE_KEY
- * - RESEND_API_KEY (for confirmation emails)
+ * - RESEND_API_KEY (for confirmation emails, optional - graceful degradation)
+ * - EMAIL_FROM (optional, defaults to "Dressing Intelligent <noreply@dressingintelligent.com>")
+ *
+ * Note: console.* is used for logging as Sentry is not available in Deno Edge Functions.
+ * Supabase captures these logs in the Edge Functions dashboard.
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -43,8 +47,9 @@ async function sendDeletionConfirmationEmail(
   email: string
 ): Promise<{ success: boolean; error?: string }> {
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  const emailFrom = Deno.env.get("EMAIL_FROM") || "Dressing Intelligent <noreply@dressingintelligent.com>";
 
-  // If no Resend API key, skip email (graceful degradation)
+  // If no Resend API key, skip email (graceful degradation - Issue #1)
   if (!resendApiKey) {
     console.warn("RESEND_API_KEY not configured - skipping confirmation email");
     return { success: true };
@@ -58,7 +63,7 @@ async function sendDeletionConfirmationEmail(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Dressing Intelligent <noreply@dressingintelligent.com>",
+        from: emailFrom,
         to: [email],
         subject: "Confirmation de suppression de votre compte",
         html: `
@@ -109,7 +114,8 @@ async function sendDeletionConfirmationEmail(
 }
 
 /**
- * Delete all files for a user from a storage bucket
+ * Delete all files for a user from a storage bucket (recursive for subfolders)
+ * Issue #5 fix: Now handles nested folders like userId/thumbnails/
  */
 async function deleteStorageFiles(
   supabaseAdmin: ReturnType<typeof createClient>,
@@ -117,34 +123,65 @@ async function deleteStorageFiles(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // List all files in the user's folder
-    const { data: files, error: listError } = await supabaseAdmin.storage
-      .from(bucketName)
-      .list(userId);
+    // Recursive function to collect all file paths
+    async function collectFilePaths(prefix: string): Promise<string[]> {
+      const { data: items, error: listError } = await supabaseAdmin.storage
+        .from(bucketName)
+        .list(prefix);
 
-    if (listError) {
-      // Bucket might not exist or be empty - not an error
-      if (
-        listError.message.includes("not found") ||
-        listError.message.includes("does not exist")
-      ) {
-        return { success: true };
+      if (listError) {
+        // Bucket might not exist or be empty - not an error
+        if (
+          listError.message.includes("not found") ||
+          listError.message.includes("does not exist")
+        ) {
+          return [];
+        }
+        throw new Error(listError.message);
       }
-      return { success: false, error: listError.message };
+
+      if (!items || items.length === 0) {
+        return [];
+      }
+
+      const paths: string[] = [];
+
+      for (const item of items) {
+        const itemPath = `${prefix}/${item.name}`;
+
+        // Check if item is a folder (no metadata means it's a folder)
+        if (item.metadata === null) {
+          // Recursively collect files from subfolder
+          const subPaths = await collectFilePaths(itemPath);
+          paths.push(...subPaths);
+        } else {
+          // It's a file
+          paths.push(itemPath);
+        }
+      }
+
+      return paths;
     }
 
-    if (!files || files.length === 0) {
+    // Collect all file paths recursively
+    const allFilePaths = await collectFilePaths(userId);
+
+    if (allFilePaths.length === 0) {
       return { success: true };
     }
 
-    // Delete all files
-    const filePaths = files.map((file) => `${userId}/${file.name}`);
-    const { error: deleteError } = await supabaseAdmin.storage
-      .from(bucketName)
-      .remove(filePaths);
+    // Delete all files in batches of 100 (Supabase limit)
+    const batchSize = 100;
+    for (let i = 0; i < allFilePaths.length; i += batchSize) {
+      const batch = allFilePaths.slice(i, i + batchSize);
+      const { error: deleteError } = await supabaseAdmin.storage
+        .from(bucketName)
+        .remove(batch);
 
-    if (deleteError) {
-      return { success: false, error: deleteError.message };
+      if (deleteError) {
+        console.error(`Failed to delete batch ${i / batchSize + 1}: ${deleteError.message}`);
+        // Continue with other batches
+      }
     }
 
     return { success: true };

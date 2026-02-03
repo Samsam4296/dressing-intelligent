@@ -120,8 +120,8 @@ export const DeleteAccountModal = ({
 
             {/* Warning message */}
             <View className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 mb-4">
-              <Text className="text-center text-sm text-red-700 dark:text-red-300">
-                ⚠️ Cette action est irréversible. Toutes vos données seront supprimées définitivement :
+              <Text className="text-center text-sm font-medium text-red-700 dark:text-red-300">
+                Attention : Cette action est irréversible. Toutes vos données seront supprimées définitivement :
               </Text>
               <View className="mt-2">
                 <Text className="text-sm text-red-600 dark:text-red-400">

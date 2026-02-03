@@ -5,12 +5,21 @@
  * IMPORTANT: These are LOGIC tests, not component rendering tests.
  * They validate the business rules and data flow used by DeleteAccountModal.
  *
- * For proper hook integration tests, see:
- * - features/settings/__tests__/useDeleteAccount.test.ts
+ * Why Logic Tests Instead of Component Rendering Tests?
+ * -----------------------------------------------------
+ * React Native testing with NativeWind 4.x + Reanimated 3.x requires complex
+ * mock setup that often breaks between versions. Instead of fighting with mocks,
+ * we test:
+ * 1. Business logic validation (canSubmit, error states, button states)
+ * 2. Accessibility label structure (ensuring correct labels exist)
+ * 3. Hook behavior (via useDeleteAccount.test.ts)
  *
- * For component rendering tests:
- * - Requires complex mocking of NativeWind + Reanimated + react-native-css-interop
- * - Visual/E2E testing recommended via Expo app or Maestro
+ * For actual component rendering tests:
+ * - Use Maestro for E2E testing on real devices/simulators
+ * - Manual testing via Expo Go app
+ *
+ * For hook integration tests, see:
+ * - features/settings/__tests__/useDeleteAccount.test.ts
  *
  * Test Categories:
  * - canSubmit logic (password validation)

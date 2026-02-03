@@ -93,9 +93,17 @@ export const useDeleteAccount = ({
   onClose,
 }: UseDeleteAccountOptions): UseDeleteAccountReturn => {
   // State
-  const [password, setPassword] = useState('');
+  const [password, setPasswordState] = useState('');
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Set password and clear any existing error (Issue #3 fix)
+   */
+  const setPassword = useCallback((value: string) => {
+    setError(null);
+    setPasswordState(value);
+  }, []);
 
   // Hooks
   const queryClient = useQueryClient();
