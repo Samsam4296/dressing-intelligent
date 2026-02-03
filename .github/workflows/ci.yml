@@ -57,8 +57,10 @@ jobs:
 
       # Sentry Source Maps Upload (main branch only)
       # Required secrets: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT
+      # Note: continue-on-error allows CI to pass even if Sentry secrets aren't configured
       - name: Upload Source Maps to Sentry
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        continue-on-error: true
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
