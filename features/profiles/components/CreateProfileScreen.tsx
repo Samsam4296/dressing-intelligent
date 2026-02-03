@@ -186,11 +186,12 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
       // Success haptic feedback (AC#12)
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Navigate to main screen (AC#8)
+      // Navigate to trial screen after first profile creation (Story 1.11 AC#1)
+      // User can then choose to start trial or skip
       if (onSuccess) {
         onSuccess();
       } else {
-        router.replace('/');
+        router.replace('/(auth)/trial');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Une erreur est survenue';
