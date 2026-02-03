@@ -1,23 +1,30 @@
 /**
- * EditProfileModal Component Tests
+ * EditProfileModal Logic Tests
  * Story 1.8: Modification de Profil
  *
- * Consolidated tests as specified in Dev Notes:
- * - Complete happy path: open → edit → save → close
- * - Handle all error cases gracefully
- * - Validate name constraints correctly
+ * IMPORTANT: These are LOGIC tests, not component rendering tests.
+ * They validate the business rules and data flow used by EditProfileModal.
  *
- * EditProfileModal Component Verification:
- * - Component rendering tests require NativeWind + Reanimated + react-native-css-interop mocks
- *   which are complex to configure in jest-expo environment
- * - Visual/integration testing should be done via Expo app
- * - Component was manually verified on Story 1.8 implementation:
- *   - AC#1: Pre-filled name and avatar when modal opens
- *   - AC#2: Optimistic update on save
- *   - AC#3: Inline validation error for invalid name
- *   - AC#4: Avatar compression and preview
- *   - AC#5: Form stays open with data on error
- *   - AC#6: Standard UX conventions (dark mode, accessibility, haptics, toast, Sentry)
+ * For proper hook integration tests, see:
+ * - features/profiles/hooks/__tests__/useEditProfile.test.ts
+ *
+ * For component rendering tests:
+ * - Requires complex mocking of NativeWind + Reanimated + react-native-css-interop
+ * - Visual/E2E testing recommended via Expo app or Maestro
+ *
+ * Test Categories:
+ * - validateProfileName() function behavior
+ * - Form state logic (canSubmit, hasChanges)
+ * - Error handling data structures
+ * - Accessibility property validation
+ *
+ * AC Coverage (verified via useEditProfile.test.ts + manual testing):
+ * - AC#1: Pre-filled name and avatar ✓
+ * - AC#2: Optimistic update on save ✓
+ * - AC#3: Inline validation error for invalid name ✓
+ * - AC#4: Avatar compression and preview ✓
+ * - AC#5: Form stays open with data on error ✓
+ * - AC#6: Standard UX conventions ✓
  */
 
 import { validateProfileName } from '../../types/profile.types';

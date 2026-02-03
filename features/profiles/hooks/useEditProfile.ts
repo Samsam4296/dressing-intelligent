@@ -138,7 +138,7 @@ export const useEditProfile = ({
    * Handle successful update
    */
   const handleUpdateSuccess = useCallback(() => {
-    // Success haptic feedback
+    // Success haptic feedback (works on both iOS and Android via expo-haptics)
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Success toast
@@ -147,11 +147,11 @@ export const useEditProfile = ({
       message: 'Profil modifié avec succès',
     });
 
+    // Notify parent BEFORE closing to avoid race conditions
+    onProfileUpdated?.();
+
     // Reset and close
     resetAndClose();
-
-    // Notify parent
-    onProfileUpdated?.();
   }, [resetAndClose, onProfileUpdated]);
 
   /**
