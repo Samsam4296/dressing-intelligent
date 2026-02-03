@@ -125,7 +125,7 @@ export const TrialScreen: React.FC = () => {
         {/* Price Info */}
         <View className="mb-4 items-center">
           <Text className="text-base text-gray-500 dark:text-gray-400">
-            Puis {displayPrice} après l'essai
+            Puis {displayPrice} après l&apos;essai
           </Text>
           <Text className="mt-1 text-sm text-gray-400 dark:text-gray-500">
             Annulez à tout moment
