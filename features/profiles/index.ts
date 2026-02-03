@@ -72,3 +72,5 @@ export { AddProfileModal } from './components/AddProfileModal';
 export { ProfileIndicator } from './components/ProfileIndicator';
 // Story 1.8: Edit profile modal
 export { EditProfileModal } from './components/EditProfileModal';
+// Story 1.9: Delete profile modal
+export { DeleteProfileModal } from './components/DeleteProfileModal';

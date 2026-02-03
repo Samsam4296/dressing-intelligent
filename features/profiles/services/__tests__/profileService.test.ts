@@ -391,7 +391,19 @@ describe('profileService', () => {
   });
 
   describe('deleteProfile', () => {
-    it('deletes a profile successfully', async () => {
+    it('deletes a profile and avatar successfully', async () => {
+      // Mock auth.getUser
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: mockUser },
+        error: null,
+      } as any);
+
+      // Mock storage.remove for avatar deletion
+      mockSupabase.storage.from.mockReturnValueOnce({
+        remove: jest.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      // Mock profile deletion
       mockSupabase.from.mockReturnValueOnce({
         delete: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({ error: null }),
@@ -401,6 +413,8 @@ describe('profileService', () => {
       const result = await profileService.deleteProfile('profile-123');
 
       expect(result.error).toBeNull();
+      // Verify avatar deletion was attempted
+      expect(mockSupabase.storage.from).toHaveBeenCalledWith('avatars');
     });
 
     it('returns CONFIG_ERROR when Supabase is not configured', async () => {
@@ -409,6 +423,31 @@ describe('profileService', () => {
       const result = await profileService.deleteProfile('profile-123');
 
       expect(result.error?.code).toBe('CONFIG_ERROR');
+    });
+
+    it('deletes profile even if avatar does not exist', async () => {
+      // Mock auth.getUser
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: mockUser },
+        error: null,
+      } as any);
+
+      // Mock storage.remove returning error (avatar doesn't exist)
+      mockSupabase.storage.from.mockReturnValueOnce({
+        remove: jest.fn().mockResolvedValue({ error: { message: 'Not found' } }),
+      } as any);
+
+      // Mock profile deletion still succeeds
+      mockSupabase.from.mockReturnValueOnce({
+        delete: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({ error: null }),
+        }),
+      } as any);
+
+      const result = await profileService.deleteProfile('profile-123');
+
+      // Should still succeed - avatar deletion is best effort
+      expect(result.error).toBeNull();
     });
   });
 

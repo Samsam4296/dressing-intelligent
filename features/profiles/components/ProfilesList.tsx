@@ -3,8 +3,9 @@
  * Story 1.6: Création Profils Additionnels
  * Story 1.7: Switch Entre Profils
  * Story 1.8: Modification de Profil
+ * Story 1.9: Suppression de Profil
  *
- * Displays existing profiles with add button, switch functionality, and edit modal.
+ * Displays existing profiles with add button, switch functionality, edit and delete modals.
  *
  * AC#1 (1.6): Given l'utilisateur a moins de 3 profils When il accède à la gestion
  *             des profils Then il voit un bouton "Ajouter un profil" actif et cliquable
@@ -13,6 +14,7 @@
  * AC#2 (1.7): Profils non-actifs cliquables pour switch
  * AC#3 (1.7): Switch < 1 seconde (NFR-P4)
  * AC#1 (1.8): Long press on active profile opens edit modal with pre-filled data
+ * AC#1 (1.9): Long press on non-active profile opens delete modal with confirmation
  *
  * NFR-A1: Touch targets 44x44 minimum
  * NFR-A4: Dark mode support
@@ -28,6 +30,7 @@ import { useProfiles, useSwitchProfile } from '../hooks/useProfiles';
 import { useCurrentProfileId } from '../stores/useProfileStore';
 import { ProfileBubble } from './ProfileBubble';
 import { EditProfileModal } from './EditProfileModal';
+import { DeleteProfileModal } from './DeleteProfileModal';
 import type { Profile } from '../types/profile.types';
 
 // ============================================
@@ -77,6 +80,9 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   // Story 1.8: Edit profile state (Subtask 3.2)
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
+  // Story 1.9: Delete profile state
+  const [deletingProfile, setDeletingProfile] = useState<Profile | null>(null);
+
   // Calculate state
   const profileList = profiles || [];
   const profileCount = profileList.length;
@@ -112,12 +118,19 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
   };
 
   /**
-   * Handle long press on active profile to open edit modal
-   * Story 1.8 AC#1: Long press opens edit modal with pre-filled data
-   * Subtask 3.1: onLongPress handler for active profile
+   * Handle long press on any profile
+   * Story 1.8 AC#1: Long press on active profile opens edit modal
+   * Story 1.9 AC#1: Long press on non-active profile opens delete modal
    */
-  const handleEditProfile = (profile: Profile) => {
-    setEditingProfile(profile);
+  const handleLongPress = (profile: Profile) => {
+    const isActive = profile.id === currentProfileId;
+    if (isActive) {
+      // Active profile → open edit modal
+      setEditingProfile(profile);
+    } else {
+      // Non-active profile → open delete modal
+      setDeletingProfile(profile);
+    }
   };
 
   /**
@@ -126,6 +139,14 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
    */
   const handleCloseEditModal = () => {
     setEditingProfile(null);
+  };
+
+  /**
+   * Close delete modal
+   * Story 1.9: Handle delete modal close
+   */
+  const handleCloseDeleteModal = () => {
+    setDeletingProfile(null);
   };
 
   // Loading state
@@ -209,7 +230,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
               profile={profile}
               isActive={profile.id === currentProfileId}
               onPress={handleSwitch}
-              onLongPress={handleEditProfile}
+              onLongPress={handleLongPress}
               disabled={isSwitching}
             />
           </Animated.View>
@@ -293,6 +314,15 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
         profile={editingProfile}
         onClose={handleCloseEditModal}
         onProfileUpdated={handleCloseEditModal}
+      />
+
+      {/* Delete Profile Modal (Story 1.9) */}
+      <DeleteProfileModal
+        visible={deletingProfile !== null}
+        profile={deletingProfile}
+        profiles={profileList}
+        onClose={handleCloseDeleteModal}
+        onProfileDeleted={handleCloseDeleteModal}
       />
     </Animated.View>
   );

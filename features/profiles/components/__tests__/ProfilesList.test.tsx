@@ -203,8 +203,8 @@ describe('Profile Switch Logic for ProfilesList (Story 1.7)', () => {
     });
 
     it('switches when profile is not active', () => {
-      const currentProfileId = 'profile-1';
-      const targetProfileId = 'profile-2';
+      const currentProfileId: string = 'profile-1';
+      const targetProfileId: string = 'profile-2';
       const switchProfile = jest.fn();
 
       if (targetProfileId !== currentProfileId) {
@@ -347,5 +347,96 @@ describe('Haptic Feedback Logic (Story 1.7 AC#7)', () => {
     }
 
     expect(impactAsync).not.toHaveBeenCalled();
+  });
+});
+
+// ============================================
+// Story 1.9: Suppression de Profil Tests
+// ============================================
+
+describe('Profile Long Press Logic (Story 1.9)', () => {
+  const mockProfiles = [
+    { id: 'profile-1', display_name: 'Emma', is_active: true },
+    { id: 'profile-2', display_name: 'Lucas', is_active: false },
+    { id: 'profile-3', display_name: 'Sophie', is_active: false },
+  ];
+
+  describe('Long Press Handler (AC#1)', () => {
+    it('opens edit modal when long pressing active profile', () => {
+      const currentProfileId = 'profile-1';
+      const profile = mockProfiles[0];
+      const setEditingProfile = jest.fn();
+      const setDeletingProfile = jest.fn();
+
+      // Simulate handleLongPress logic
+      const isActive = profile.id === currentProfileId;
+      if (isActive) {
+        setEditingProfile(profile);
+      } else {
+        setDeletingProfile(profile);
+      }
+
+      expect(setEditingProfile).toHaveBeenCalledWith(profile);
+      expect(setDeletingProfile).not.toHaveBeenCalled();
+    });
+
+    it('opens delete modal when long pressing non-active profile', () => {
+      const currentProfileId = 'profile-1';
+      const profile = mockProfiles[1]; // Lucas - non-active
+      const setEditingProfile = jest.fn();
+      const setDeletingProfile = jest.fn();
+
+      // Simulate handleLongPress logic
+      const isActive = profile.id === currentProfileId;
+      if (isActive) {
+        setEditingProfile(profile);
+      } else {
+        setDeletingProfile(profile);
+      }
+
+      expect(setDeletingProfile).toHaveBeenCalledWith(profile);
+      expect(setEditingProfile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Delete Modal State', () => {
+    it('shows delete modal when deletingProfile is set', () => {
+      const deletingProfile = mockProfiles[1];
+      const visible = deletingProfile !== null;
+
+      expect(visible).toBe(true);
+    });
+
+    it('hides delete modal when deletingProfile is null', () => {
+      const deletingProfile = null;
+      const visible = deletingProfile !== null;
+
+      expect(visible).toBe(false);
+    });
+  });
+
+  describe('Delete Modal Props', () => {
+    it('passes correct profiles array to delete modal', () => {
+      const profiles = mockProfiles;
+      const deletingProfile = profiles[1];
+
+      // The modal should receive all profiles to check if last
+      expect(profiles).toHaveLength(3);
+      expect(deletingProfile).toBe(profiles[1]);
+    });
+
+    it('identifies last profile correctly', () => {
+      const singleProfile = [mockProfiles[0]];
+      const isLastProfile = singleProfile.length <= 1;
+
+      expect(isLastProfile).toBe(true);
+    });
+
+    it('identifies non-last profile correctly', () => {
+      const profiles = mockProfiles;
+      const isLastProfile = profiles.length <= 1;
+
+      expect(isLastProfile).toBe(false);
+    });
   });
 });

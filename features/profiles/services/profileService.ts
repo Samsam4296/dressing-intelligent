@@ -377,8 +377,8 @@ export const profileService = {
   },
 
   /**
-   * Delete a profile
-   * Note: Cannot delete if it's the only profile and active
+   * Delete a profile and its associated avatar from Storage
+   * Story 1.9: Suppression de Profil
    *
    * @param profileId - Profile UUID to delete
    */
@@ -394,6 +394,19 @@ export const profileService = {
     }
 
     try {
+      // Get current user for avatar path
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      // Delete avatar from Storage (best effort - don't fail if avatar doesn't exist)
+      if (user) {
+        const avatarPath = `${user.id}/${profileId}.jpg`;
+        await supabase.storage.from('avatars').remove([avatarPath]);
+        // Note: We don't check for errors here as the avatar might not exist
+      }
+
+      // Delete profile from database (cascade will delete clothes, recommendations)
       const { error } = await supabase.from('profiles').delete().eq('id', profileId);
 
       if (error) {
