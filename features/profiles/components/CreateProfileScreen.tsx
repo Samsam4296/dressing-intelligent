@@ -190,8 +190,7 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
       if (onSuccess) {
         onSuccess();
       } else {
-        // @ts-expect-error Route exists but not in auto-generated types
-        router.replace('/(tabs)/');
+        router.replace('/');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Une erreur est survenue';
