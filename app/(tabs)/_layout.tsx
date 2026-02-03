@@ -6,10 +6,12 @@
  * - useSyncPendingSwitch: Syncs offline profile switches on reconnection (AC#11)
  * - useValidateActiveProfile: Auto-recovers if active profile is deleted (AC#18)
  *
+ * Story 1.10: Suppression de Compte
+ * - Settings tab added for account management
+ *
  * This layout will be expanded in future stories to include:
  * - Home/Recommendations tab
  * - Wardrobe tab
- * - Settings tab
  */
 
 import { Tabs } from 'expo-router';
@@ -64,6 +66,15 @@ export default function TabsLayout() {
           title: 'Profils',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="people-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Paramètres',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />

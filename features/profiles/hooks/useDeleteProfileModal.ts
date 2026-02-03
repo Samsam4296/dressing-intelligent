@@ -1,9 +1,12 @@
 /**
- * useDeleteProfile Hook
+ * useDeleteProfileModal Hook
  * Story 1.9: Suppression de Profil
  *
- * Custom hook that manages all state and logic for deleting a profile.
- * Separates business logic from UI rendering in DeleteProfileModal.
+ * Custom hook that manages all state and logic for DeleteProfileModal.
+ * Separates business logic from UI rendering in the modal component.
+ *
+ * NOTE: This is distinct from useDeleteProfile in useProfiles.ts which is
+ * the raw TanStack Query mutation. This hook orchestrates the full modal flow.
  *
  * Features:
  * - Validation (block last profile deletion)
@@ -11,9 +14,17 @@
  * - Cache invalidation via TanStack Query
  * - Success/error feedback (haptics, toast, Sentry)
  *
- * AC#2: Profile deletion with cascade (handled by DB)
- * AC#3: Auto-switch if active deleted (handled by useValidateActiveProfile)
+ * AC#2: Profile deletion with cascade (handled by DB + Storage cleanup)
+ * AC#3: Only non-active profiles deletable via UI. If active profile is
+ *       deleted by other means (API direct), useValidateActiveProfile (Story 1.7)
+ *       handles auto-switch on next render via profileKeys.all invalidation.
  * AC#4: Block deletion of last profile
+ *
+ * Auto-switch behavior (AC#3):
+ * When this hook invalidates profileKeys.all after deletion, any component
+ * using useValidateActiveProfile will automatically detect the orphaned active
+ * profile state and switch to the first available profile. The invalidation
+ * triggers a refetch which useValidateActiveProfile monitors.
  */
 
 import { useState, useCallback } from 'react';
@@ -29,7 +40,7 @@ import type { Profile } from '../types/profile.types';
 // Types
 // ============================================
 
-interface UseDeleteProfileOptions {
+interface UseDeleteProfileModalOptions {
   /** Profile to delete */
   profile: Profile | null;
   /** All profiles (to check if last profile) */
@@ -40,7 +51,7 @@ interface UseDeleteProfileOptions {
   onProfileDeleted?: () => void;
 }
 
-interface UseDeleteProfileReturn {
+interface UseDeleteProfileModalReturn {
   // State
   isPending: boolean;
   canDelete: boolean;
@@ -56,14 +67,17 @@ interface UseDeleteProfileReturn {
 // ============================================
 
 /**
- * Hook for managing profile deletion state and logic
+ * Hook for managing DeleteProfileModal state and logic
+ *
+ * Note: This hook is distinct from useDeleteProfile in useProfiles.ts which is
+ * the TanStack Query mutation. This hook manages the complete modal logic.
  *
  * @example
  * ```tsx
  * const {
  *   isPending, canDelete, isLastProfile,
  *   handleDelete, resetAndClose
- * } = useDeleteProfile({
+ * } = useDeleteProfileModal({
  *   profile,
  *   profiles,
  *   onClose,
@@ -71,12 +85,12 @@ interface UseDeleteProfileReturn {
  * });
  * ```
  */
-export const useDeleteProfile = ({
+export const useDeleteProfileModal = ({
   profile,
   profiles,
   onClose,
   onProfileDeleted,
-}: UseDeleteProfileOptions): UseDeleteProfileReturn => {
+}: UseDeleteProfileModalOptions): UseDeleteProfileModalReturn => {
   // Loading state
   const [isPending, setIsPending] = useState(false);
 
@@ -189,5 +203,3 @@ export const useDeleteProfile = ({
     resetAndClose,
   };
 };
-
-export default useDeleteProfile;

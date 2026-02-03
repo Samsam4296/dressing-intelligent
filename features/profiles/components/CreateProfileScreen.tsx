@@ -10,7 +10,7 @@
  * AC#12: Haptic feedback on creation
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,6 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -34,7 +33,6 @@ import Animated, {
   withSequence,
   withTiming,
   withSpring,
-  runOnJS,
 } from 'react-native-reanimated';
 
 import { AvatarPicker } from './AvatarPicker';
@@ -199,6 +197,7 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
       if (onSuccess) {
         onSuccess();
       } else {
+        // @ts-expect-error Route exists but not in auto-generated types
         router.replace('/(tabs)/');
       }
     } catch (error) {

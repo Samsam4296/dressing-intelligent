@@ -1,16 +1,18 @@
 /**
- * useDeleteProfile Hook Tests
+ * useDeleteProfileModal Hook Tests
  * Story 1.9: Suppression de Profil
  *
- * Tests for the useDeleteProfile hook:
- * - AC#2: Profile deletion with cascade
- * - AC#3: Auto-switch if active profile deleted (via useValidateActiveProfile)
+ * Tests for the useDeleteProfileModal hook (modal logic, distinct from TanStack mutation):
+ * - AC#2: Profile deletion with cascade (avatar cleanup via profileService)
+ * - AC#3: Non-active profiles only deletable via UI (active → edit modal)
  * - AC#4: Block deletion of last profile
+ * - Callback order: onProfileDeleted BEFORE resetAndClose (Story 1.8 learning)
+ * - Error handling with haptic feedback and toast
  */
 
 import { renderHook, waitFor, act } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
-import { useDeleteProfile } from '../useDeleteProfile';
+import { useDeleteProfileModal } from '../useDeleteProfileModal';
 import { profileService } from '../../services/profileService';
 import { showToast } from '@/shared/components/Toast';
 
@@ -67,7 +69,7 @@ const mockProfiles = [
 // Tests
 // ============================================
 
-describe('useDeleteProfile', () => {
+describe('useDeleteProfileModal', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -83,7 +85,7 @@ describe('useDeleteProfile', () => {
     const onClose = jest.fn();
 
     const { result } = renderHook(() =>
-      useDeleteProfile({
+      useDeleteProfileModal({
         profile: mockProfile,
         profiles: mockProfiles,
         onClose,
@@ -122,7 +124,7 @@ describe('useDeleteProfile', () => {
     const singleProfile = [mockProfile];
 
     const { result } = renderHook(() =>
-      useDeleteProfile({
+      useDeleteProfileModal({
         profile: mockProfile,
         profiles: singleProfile,
         onClose,
@@ -158,7 +160,7 @@ describe('useDeleteProfile', () => {
     const onClose = jest.fn(() => callOrder.push('onClose'));
 
     const { result } = renderHook(() =>
-      useDeleteProfile({
+      useDeleteProfileModal({
         profile: mockProfile,
         profiles: mockProfiles,
         onClose,
@@ -184,7 +186,7 @@ describe('useDeleteProfile', () => {
     const onClose = jest.fn();
 
     const { result } = renderHook(() =>
-      useDeleteProfile({
+      useDeleteProfileModal({
         profile: mockProfile,
         profiles: mockProfiles,
         onClose,
@@ -210,7 +212,7 @@ describe('useDeleteProfile', () => {
     const onClose = jest.fn();
 
     const { result } = renderHook(() =>
-      useDeleteProfile({
+      useDeleteProfileModal({
         profile: mockProfile,
         profiles: mockProfiles,
         onClose,
@@ -223,5 +225,118 @@ describe('useDeleteProfile', () => {
     });
 
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('sets isPending during deletion and clears after', async () => {
+    // Slow deletion to verify isPending state
+    (profileService.deleteProfile as jest.Mock).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve({ data: null, error: null }), 50))
+    );
+
+    const { result } = renderHook(() =>
+      useDeleteProfileModal({
+        profile: mockProfile,
+        profiles: mockProfiles,
+        onClose: jest.fn(),
+        onProfileDeleted: jest.fn(),
+      })
+    );
+
+    // Initially not pending
+    expect(result.current.isPending).toBe(false);
+
+    // Start deletion
+    let deletePromise: Promise<void>;
+    act(() => {
+      deletePromise = result.current.handleDelete();
+    });
+
+    // Should be pending
+    expect(result.current.isPending).toBe(true);
+
+    // Wait for completion
+    await act(async () => {
+      await deletePromise;
+    });
+
+    // Should no longer be pending
+    expect(result.current.isPending).toBe(false);
+  });
+
+  it('deletes profile with avatar (avatar cleanup via profileService)', async () => {
+    const profileWithAvatar = {
+      ...mockProfile,
+      avatar_url: 'https://storage.example.com/avatars/user-1/profile-1.jpg',
+    };
+
+    (profileService.deleteProfile as jest.Mock).mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useDeleteProfileModal({
+        profile: profileWithAvatar,
+        profiles: [profileWithAvatar, mockProfiles[1]],
+        onClose: jest.fn(),
+        onProfileDeleted: jest.fn(),
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDelete();
+    });
+
+    // profileService.deleteProfile handles avatar cleanup internally
+    expect(profileService.deleteProfile).toHaveBeenCalledWith(profileWithAvatar.id);
+    expect(Haptics.notificationAsync).toHaveBeenCalledWith(
+      Haptics.NotificationFeedbackType.Success
+    );
+  });
+
+  it('returns correct isLastProfile flag', () => {
+    const { result: resultSingle } = renderHook(() =>
+      useDeleteProfileModal({
+        profile: mockProfile,
+        profiles: [mockProfile], // Only one profile
+        onClose: jest.fn(),
+        onProfileDeleted: jest.fn(),
+      })
+    );
+
+    expect(resultSingle.current.isLastProfile).toBe(true);
+    expect(resultSingle.current.canDelete).toBe(false);
+
+    const { result: resultMultiple } = renderHook(() =>
+      useDeleteProfileModal({
+        profile: mockProfile,
+        profiles: mockProfiles, // Multiple profiles
+        onClose: jest.fn(),
+        onProfileDeleted: jest.fn(),
+      })
+    );
+
+    expect(resultMultiple.current.isLastProfile).toBe(false);
+    expect(resultMultiple.current.canDelete).toBe(true);
+  });
+
+  it('handles null profile gracefully', async () => {
+    const { result } = renderHook(() =>
+      useDeleteProfileModal({
+        profile: null,
+        profiles: mockProfiles,
+        onClose: jest.fn(),
+        onProfileDeleted: jest.fn(),
+      })
+    );
+
+    expect(result.current.canDelete).toBe(false);
+
+    await act(async () => {
+      await result.current.handleDelete();
+    });
+
+    // Should not call service with null profile
+    expect(profileService.deleteProfile).not.toHaveBeenCalled();
   });
 });

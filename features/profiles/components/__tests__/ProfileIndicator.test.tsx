@@ -8,8 +8,6 @@
  * NFR-A4: Dark mode support
  */
 
-import { renderHook } from '@testing-library/react-native';
-
 // Mock modules
 const mockPush = jest.fn();
 const mockImpactAsync = jest.fn();

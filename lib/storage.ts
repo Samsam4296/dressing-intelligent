@@ -5,7 +5,6 @@
  * For production, consider adding MMKV back with a development build.
  */
 
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { StateStorage } from 'zustand/middleware';
 
@@ -13,7 +12,7 @@ import type { StateStorage } from 'zustand/middleware';
  * Unified storage interface using AsyncStorage
  */
 export const storage = {
-  getString: (key: string): string | null => {
+  getString: (_key: string): string | null => {
     // AsyncStorage is async, this returns null synchronously
     // Zustand hydration handles async loading
     return null;
@@ -27,7 +26,7 @@ export const storage = {
     AsyncStorage.removeItem(key).catch(console.error);
   },
 
-  contains: (key: string): boolean => {
+  contains: (_key: string): boolean => {
     // Sync check not possible with AsyncStorage
     return false;
   },
@@ -99,6 +98,7 @@ export const storageHelpers = {
 
   // Get all keys
   getAllKeys: async (): Promise<string[]> => {
-    return (await AsyncStorage.getAllKeys()) || [];
+    const keys = await AsyncStorage.getAllKeys();
+    return keys ? [...keys] : [];
   },
 };

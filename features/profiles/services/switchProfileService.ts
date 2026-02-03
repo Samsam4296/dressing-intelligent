@@ -102,7 +102,8 @@ export const switchProfileService = {
       const previousProfileId = currentProfile?.id || null;
 
       // Try RPC function first (atomic transaction)
-      const { data: rpcResult, error: rpcError } = await supabase.rpc('switch_active_profile', {
+      // @ts-expect-error RPC function may not exist in schema yet
+      const { error: rpcError } = await supabase.rpc('switch_active_profile', {
         p_user_id: user.id,
         p_new_profile_id: newProfileId,
       });

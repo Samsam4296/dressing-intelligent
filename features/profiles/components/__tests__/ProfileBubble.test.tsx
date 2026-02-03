@@ -108,7 +108,7 @@ describe('ProfileBubble', () => {
       const disabled = false;
       const onPress = jest.fn();
 
-      const isInteractive = onPress && !isActive && !disabled;
+      const isInteractive = !!onPress && !isActive && !disabled;
 
       expect(isInteractive).toBe(true);
     });
@@ -118,7 +118,7 @@ describe('ProfileBubble', () => {
       const disabled = false;
       const onPress = jest.fn();
 
-      const isInteractive = onPress && !isActive && !disabled;
+      const isInteractive = !!onPress && !isActive && !disabled;
 
       expect(isInteractive).toBe(false);
     });
@@ -128,7 +128,7 @@ describe('ProfileBubble', () => {
       const disabled = true;
       const onPress = jest.fn();
 
-      const isInteractive = onPress && !isActive && !disabled;
+      const isInteractive = !!onPress && !isActive && !disabled;
 
       expect(isInteractive).toBe(false);
     });
@@ -151,7 +151,7 @@ describe('ProfileBubble', () => {
       const onPress = jest.fn();
 
       // Simulate handlePressIn logic
-      if (!disabled && !isActive && onPress) {
+      if (!disabled && !isActive && !!onPress) {
         mockImpactAsync('light');
       }
 
@@ -163,7 +163,7 @@ describe('ProfileBubble', () => {
       const isActive = false;
       const onPress = jest.fn();
 
-      if (!disabled && !isActive && onPress) {
+      if (!disabled && !isActive && !!onPress) {
         mockImpactAsync('light');
       }
 
@@ -175,7 +175,7 @@ describe('ProfileBubble', () => {
       const isActive = true;
       const onPress = jest.fn();
 
-      if (!disabled && !isActive && onPress) {
+      if (!disabled && !isActive && !!onPress) {
         mockImpactAsync('light');
       }
 
@@ -312,8 +312,7 @@ describe('ProfileBubble', () => {
 
   describe('Dark Mode Support (NFR-A4)', () => {
     it('applies dark mode border color for active', () => {
-      const isDark = true;
-      const isActive = true;
+      // Active profile uses dark: prefix classes for NativeWind dark mode
       const darkBorderClass = 'dark:border-blue-400';
 
       expect(darkBorderClass).toContain('dark:');

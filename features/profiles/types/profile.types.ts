@@ -72,7 +72,9 @@ export type ProfileErrorCode =
   | 'DUPLICATE_NAME'
   | 'NOT_FOUND'
   | 'NETWORK_ERROR'
-  | 'UNEXPECTED_ERROR';
+  | 'UNEXPECTED_ERROR'
+  | 'PROFILE_NOT_FOUND'
+  | 'SWITCH_ERROR';
 
 /**
  * Profile error structure

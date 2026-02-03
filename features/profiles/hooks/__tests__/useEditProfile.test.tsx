@@ -14,12 +14,11 @@
  */
 
 import React from 'react';
-import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { renderHook, act } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEditProfile } from '../useEditProfile';
 import type { Profile } from '../../types/profile.types';
 import * as Haptics from 'expo-haptics';
-import * as Sentry from '@sentry/react-native';
 
 // Mock dependencies
 jest.mock('../useProfiles', () => ({
@@ -94,13 +93,13 @@ const mockProfile: Profile = {
   user_id: 'user-456',
   display_name: 'Emma',
   avatar_url: 'https://example.com/avatar.jpg',
+  birth_date: null,
   is_active: true,
   created_at: '2026-01-01T00:00:00Z',
   updated_at: '2026-01-01T00:00:00Z',
 };
 
 const mockOnClose = jest.fn();
-const mockOnProfileUpdated = jest.fn();
 
 // ============================================
 // Form Initialization Tests
@@ -140,15 +139,15 @@ describe('useEditProfile - Form Initialization (AC#1)', () => {
 
   it('resets avatarChanged flag on profile change', () => {
     const { result, rerender } = renderHook(
-      ({ profile, visible }) =>
+      (props: { profile: Profile | null; visible: boolean }) =>
         useEditProfile({
-          profile,
-          visible,
+          profile: props.profile,
+          visible: props.visible,
           onClose: mockOnClose,
         }),
       {
         wrapper: createWrapper(),
-        initialProps: { profile: mockProfile, visible: true },
+        initialProps: { profile: mockProfile as Profile | null, visible: true },
       }
     );
 

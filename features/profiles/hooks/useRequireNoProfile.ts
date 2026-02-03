@@ -41,6 +41,7 @@ export const useRequireNoProfile = (enabled = true) => {
         feature: 'profiles',
         action: 'useRequireNoProfile',
       });
+      // @ts-expect-error Route exists but not in auto-generated types
       router.replace('/(tabs)/');
     }
   }, [isLoading, hasProfile, router]);

@@ -18,7 +18,7 @@ import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { useDeleteProfile } from '../hooks/useDeleteProfile';
+import { useDeleteProfileModal } from '../hooks/useDeleteProfileModal';
 import type { Profile } from '../types/profile.types';
 
 // ============================================
@@ -67,7 +67,7 @@ export const DeleteProfileModal = ({
   const isDark = colorScheme === 'dark';
 
   // All state and logic is managed by the hook
-  const { isPending, canDelete, isLastProfile, handleDelete, resetAndClose } = useDeleteProfile({
+  const { isPending, canDelete, isLastProfile, handleDelete, resetAndClose } = useDeleteProfileModal({
     profile,
     profiles,
     onClose,

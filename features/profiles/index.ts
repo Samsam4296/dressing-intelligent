@@ -53,6 +53,9 @@ export { useValidateActiveProfile } from './hooks/useValidateActiveProfile';
 // Hooks - Story 1.8: Edit Profile
 export { useEditProfile } from './hooks/useEditProfile';
 
+// Hooks - Story 1.9: Delete Profile Modal Logic
+export { useDeleteProfileModal } from './hooks/useDeleteProfileModal';
+
 // Store - Zustand
 export {
   useProfileStore,
