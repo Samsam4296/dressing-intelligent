@@ -6,7 +6,7 @@
  * P1-03 FIX: Actually tests the EditCategoryModal component.
  */
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import { EditCategoryModal } from '../EditCategoryModal';
 
 // Mock dependencies
