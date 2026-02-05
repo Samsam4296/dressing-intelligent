@@ -114,6 +114,11 @@ jest.mock('react-native', () => {
     Alert: {
       alert: jest.fn(),
     },
+    BackHandler: {
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+      removeEventListener: jest.fn(),
+      exitApp: jest.fn(),
+    },
     Linking: {
       openURL: jest.fn(),
       canOpenURL: jest.fn().mockResolvedValue(true),
@@ -191,8 +196,14 @@ jest.mock('@expo/vector-icons', () => ({
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
-  const MockAnimatedView = ({ children, testID, entering, exiting, layout, ...props }) =>
-    React.createElement('Animated.View', { testID, ...props }, children);
+  const MockAnimatedView = ({ children, testID, entering, exiting, layout, style, ...props }) =>
+    React.createElement('Animated.View', { testID, style, ...props }, children);
+  const MockAnimatedText = ({ children, testID, style, ...props }) =>
+    React.createElement('Animated.Text', { testID, style, ...props }, children);
+  const MockAnimatedImage = ({ testID, source, style, ...props }) =>
+    React.createElement('Animated.Image', { testID, source, style, ...props });
+  const MockAnimatedScrollView = ({ children, testID, style, ...props }) =>
+    React.createElement('Animated.ScrollView', { testID, style, ...props }, children);
 
   // Create chainable animation objects
   const createChainableAnimation = () => {
@@ -210,33 +221,41 @@ jest.mock('react-native-reanimated', () => {
     return chainable;
   };
 
-  return {
-    default: {
-      call: jest.fn(),
-      createAnimatedComponent: (component) => component,
-      Value: jest.fn(),
-      event: jest.fn(),
-      add: jest.fn(),
-      eq: jest.fn(),
-      set: jest.fn(),
-      cond: jest.fn(),
-      interpolate: jest.fn(),
-      View: MockAnimatedView,
-      Text: 'Animated.Text',
-      Image: 'Animated.Image',
-      ScrollView: 'Animated.ScrollView',
-      Extrapolate: { CLAMP: 'clamp' },
-      Transition: {
-        Together: 'Together',
-        Out: 'Out',
-        In: 'In',
-      },
+  // Animated object used for both default and named export
+  const Animated = {
+    call: jest.fn(),
+    createAnimatedComponent: (component) => component,
+    Value: jest.fn(),
+    event: jest.fn(),
+    add: jest.fn(),
+    eq: jest.fn(),
+    set: jest.fn(),
+    cond: jest.fn(),
+    interpolate: jest.fn(),
+    View: MockAnimatedView,
+    Text: MockAnimatedText,
+    Image: MockAnimatedImage,
+    ScrollView: MockAnimatedScrollView,
+    Extrapolate: { CLAMP: 'clamp' },
+    Transition: {
+      Together: 'Together',
+      Out: 'Out',
+      In: 'In',
     },
-    useAnimatedStyle: () => ({}),
-    useSharedValue: (v) => ({ value: v }),
-    withTiming: (v) => v,
-    withSpring: (v) => v,
-    withSequence: (...args) => args[0],
+  };
+
+  return {
+    __esModule: true,
+    default: Animated,
+    // Also export as Animated for named import compatibility
+    Animated,
+    useAnimatedStyle: jest.fn(() => ({})),
+    useSharedValue: jest.fn((v) => ({ value: v })),
+    withTiming: jest.fn((v) => v),
+    withSpring: jest.fn((v) => v),
+    withRepeat: jest.fn((v) => v),
+    withSequence: jest.fn((...args) => args[0]),
+    cancelAnimation: jest.fn(),
     FadeIn: createChainableAnimation(),
     FadeOut: createChainableAnimation(),
     FadeInDown: createChainableAnimation(),
