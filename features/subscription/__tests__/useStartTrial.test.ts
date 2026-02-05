@@ -69,7 +69,8 @@ jest.mock('../services/iapService', () => ({
     endConnection: () => mockEndConnection(),
     getProducts: () => mockGetProducts(),
     requestSubscription: (productId: string) => mockRequestSubscription(productId),
-    validateReceipt: (receipt: string, productId: string) => mockValidateReceipt(receipt, productId),
+    validateReceipt: (receipt: string, productId: string) =>
+      mockValidateReceipt(receipt, productId),
     finishTransaction: (purchase: unknown) => mockFinishTransaction(purchase),
     setupPurchaseListeners: (onUpdate: () => void, onError: () => void) =>
       mockSetupPurchaseListeners(onUpdate, onError),
@@ -177,9 +178,7 @@ describe('useStartTrial', () => {
       });
 
       // Verify light haptic (AC#5)
-      expect(Haptics.impactAsync).toHaveBeenCalledWith(
-        Haptics.ImpactFeedbackStyle.Light
-      );
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
 
       // Verify subscription status set to 'none' (AC#5)
       expect(mockSetSubscription).toHaveBeenCalledWith({ status: 'none' });
@@ -276,9 +275,13 @@ describe('useStartTrial', () => {
     it('sets isPending during handleStartTrial', async () => {
       // Delay the mock response
       mockRequestSubscription.mockImplementation(
-        () => new Promise((resolve) => {
-          setTimeout(() => resolve({ data: null, error: { code: 'USER_CANCELLED', message: '' } }), 100);
-        })
+        () =>
+          new Promise((resolve) => {
+            setTimeout(
+              () => resolve({ data: null, error: { code: 'USER_CANCELLED', message: '' } }),
+              100
+            );
+          })
       );
 
       const { result } = renderHook(() => useStartTrial());

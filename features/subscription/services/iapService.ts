@@ -26,7 +26,12 @@ import {
   type PurchaseError,
 } from 'react-native-iap';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import type { ApiResponse, IAPProduct, Subscription, Platform as SubscriptionPlatform } from '../types/subscription';
+import type {
+  ApiResponse,
+  IAPProduct,
+  Subscription,
+  Platform as SubscriptionPlatform,
+} from '../types/subscription';
 
 // Product ID configured in App Store Connect / Google Play Console
 export const PRODUCT_ID = 'dressing_monthly_trial';
@@ -34,21 +39,35 @@ export const PRODUCT_ID = 'dressing_monthly_trial';
 /**
  * Map IAP error codes to user-friendly French messages
  */
-const mapIAPError = (error: { message: string; code?: string }): { code: string; message: string } => {
+const mapIAPError = (error: {
+  message: string;
+  code?: string;
+}): { code: string; message: string } => {
   const message = error.message.toLowerCase();
 
   // User cancelled purchase
-  if (message.includes('cancelled') || message.includes('canceled') || message.includes('user cancel')) {
+  if (
+    message.includes('cancelled') ||
+    message.includes('canceled') ||
+    message.includes('user cancel')
+  ) {
     return { code: 'USER_CANCELLED', message: 'Achat annulé' };
   }
 
   // Network errors
   if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
-    return { code: 'NETWORK_ERROR', message: 'Erreur de connexion. Vérifiez votre connexion internet.' };
+    return {
+      code: 'NETWORK_ERROR',
+      message: 'Erreur de connexion. Vérifiez votre connexion internet.',
+    };
   }
 
   // IAP not available
-  if (message.includes('not available') || message.includes('unavailable') || message.includes('not supported')) {
+  if (
+    message.includes('not available') ||
+    message.includes('unavailable') ||
+    message.includes('not supported')
+  ) {
     return { code: 'IAP_UNAVAILABLE', message: 'Les achats intégrés ne sont pas disponibles.' };
   }
 
@@ -59,12 +78,18 @@ const mapIAPError = (error: { message: string; code?: string }): { code: string;
 
   // Pending purchase
   if (message.includes('pending')) {
-    return { code: 'PURCHASE_PENDING', message: "Achat en attente. Vérifiez votre méthode de paiement." };
+    return {
+      code: 'PURCHASE_PENDING',
+      message: 'Achat en attente. Vérifiez votre méthode de paiement.',
+    };
   }
 
   // Payment failed
   if (message.includes('payment') || message.includes('billing')) {
-    return { code: 'PAYMENT_FAILED', message: 'Échec du paiement. Vérifiez votre méthode de paiement.' };
+    return {
+      code: 'PAYMENT_FAILED',
+      message: 'Échec du paiement. Vérifiez votre méthode de paiement.',
+    };
   }
 
   // Validation failed
@@ -156,7 +181,8 @@ export const iapService = {
         title: sub.title || '',
         description: sub.description || '',
         introductoryPrice: sub.introductoryPrice || undefined,
-        subscriptionPeriod: sub.subscriptionPeriodUnitIOS || sub.subscriptionPeriodAndroid || undefined,
+        subscriptionPeriod:
+          sub.subscriptionPeriodUnitIOS || sub.subscriptionPeriodAndroid || undefined,
         freeTrialPeriod: sub.introductoryPricePeriodIOS || sub.freeTrialPeriodAndroid || undefined,
       }));
 
@@ -225,10 +251,7 @@ export const iapService = {
    * AC#3: Edge Function valide côté serveur (NFR-I4)
    * CRITICAL: Always validate receipts server-side before granting access
    */
-  async validateReceipt(
-    receipt: string,
-    productId: string
-  ): Promise<ApiResponse<Subscription>> {
+  async validateReceipt(receipt: string, productId: string): Promise<ApiResponse<Subscription>> {
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
       const configError = {
@@ -244,7 +267,9 @@ export const iapService = {
 
     try {
       // Get current session for authorization
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
         return {

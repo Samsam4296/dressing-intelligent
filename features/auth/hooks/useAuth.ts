@@ -115,9 +115,7 @@ export const useAuth = (): AuthState => {
         // Story 1.14 AC#2: Check 30-day inactivity (NFR-S9)
         const lastActivity = await storageHelpers.getJSON<number>(STORAGE_KEYS.LAST_ACTIVITY);
         if (lastActivity) {
-          const daysSinceActivity = Math.floor(
-            (Date.now() - lastActivity) / (1000 * 60 * 60 * 24)
-          );
+          const daysSinceActivity = Math.floor((Date.now() - lastActivity) / (1000 * 60 * 60 * 24));
 
           if (daysSinceActivity > INACTIVITY_DAYS_LIMIT) {
             // Invalidate session - too long inactive

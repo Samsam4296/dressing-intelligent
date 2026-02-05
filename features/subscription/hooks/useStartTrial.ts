@@ -108,18 +108,19 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
       try {
         // Get receipt from purchase
-        const receipt = Platform.OS === 'ios'
-          ? purchase.transactionReceipt || ''
-          : JSON.stringify({
-              purchaseToken: purchase.purchaseToken,
-              orderId: purchase.transactionId,
-              packageName: purchase.packageNameAndroid,
-              productId: purchase.productId,
-              purchaseTime: purchase.transactionDate,
-              // Android specific fields
-              autoRenewing: true,
-              isFreeTrial: true,
-            });
+        const receipt =
+          Platform.OS === 'ios'
+            ? purchase.transactionReceipt || ''
+            : JSON.stringify({
+                purchaseToken: purchase.purchaseToken,
+                orderId: purchase.transactionId,
+                packageName: purchase.packageNameAndroid,
+                productId: purchase.productId,
+                purchaseTime: purchase.transactionDate,
+                // Android specific fields
+                autoRenewing: true,
+                isFreeTrial: true,
+              });
 
         if (!receipt) {
           throw new Error('No receipt found');
@@ -203,10 +204,7 @@ export const useStartTrial = (): UseStartTrialReturn => {
     if (!isMounted.current) return;
 
     // User cancelled - not an error, just ignore
-    if (
-      purchaseError.code === 'E_USER_CANCELLED' ||
-      purchaseError.message?.includes('cancel')
-    ) {
+    if (purchaseError.code === 'E_USER_CANCELLED' || purchaseError.message?.includes('cancel')) {
       setIsPending(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
@@ -280,7 +278,7 @@ export const useStartTrial = (): UseStartTrialReturn => {
       });
 
       if (isMounted.current) {
-        setError("Les achats intégrés ne sont pas disponibles");
+        setError('Les achats intégrés ne sont pas disponibles');
         setCanRetry(true); // Allow retry on exception
       }
     } finally {
@@ -334,9 +332,8 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
     try {
       // Request subscription purchase (AC#2 - opens native store sheet)
-      const { data: purchase, error: purchaseError } = await iapService.requestSubscription(
-        PRODUCT_ID
-      );
+      const { data: purchase, error: purchaseError } =
+        await iapService.requestSubscription(PRODUCT_ID);
 
       if (purchaseError) {
         // User cancelled

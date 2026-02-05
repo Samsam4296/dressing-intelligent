@@ -35,9 +35,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
  * Base64URL encode (RFC 4648)
  */
 function base64UrlEncode(data: Uint8Array | string): string {
-  const base64 = typeof data === 'string'
-    ? btoa(data)
-    : btoa(String.fromCharCode(...data));
+  const base64 = typeof data === 'string' ? btoa(data) : btoa(String.fromCharCode(...data));
   return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -110,10 +108,7 @@ async function createSignedJwt(
 /**
  * Get Google OAuth2 access token using service account
  */
-async function getGoogleAccessToken(
-  clientEmail: string,
-  privateKey: string
-): Promise<string> {
+async function getGoogleAccessToken(clientEmail: string, privateKey: string): Promise<string> {
   const jwt = await createSignedJwt(
     clientEmail,
     privateKey,
@@ -253,8 +248,8 @@ async function validateAppleReceipt(
     const now = new Date();
 
     // Determine status
-    const isTrial = latestReceipt.is_trial_period === 'true' ||
-                    latestReceipt.is_in_intro_offer_period === 'true';
+    const isTrial =
+      latestReceipt.is_trial_period === 'true' || latestReceipt.is_in_intro_offer_period === 'true';
     const isExpired = expiresAt < now;
     const autoRenewing = result.pending_renewal_info?.[0]?.auto_renew_status === '1';
 
@@ -497,10 +492,13 @@ Deno.serve(async (req: Request) => {
     const { receipt, platform, productId } = body;
 
     if (!receipt || !platform || !productId) {
-      return new Response(JSON.stringify({ error: 'Missing required fields: receipt, platform, productId' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: receipt, platform, productId' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Validate platform
@@ -520,18 +518,21 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!validationResult.valid || !validationResult.data) {
-      return new Response(JSON.stringify({
-        error: validationResult.error || 'Receipt validation failed',
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          error: validationResult.error || 'Receipt validation failed',
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Prepare subscription data
     const subscriptionData: SubscriptionData = {
       user_id: userId,
-      ...validationResult.data as Omit<SubscriptionData, 'user_id'>,
+      ...(validationResult.data as Omit<SubscriptionData, 'user_id'>),
     };
 
     // Check if subscription already exists (upsert)

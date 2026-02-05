@@ -266,9 +266,7 @@ describe('useAuth Hook', () => {
       // Mock: first call returns LAST_ACTIVITY, second call returns auth state
       (storageHelpers.getJSON as jest.Mock)
         .mockImplementationOnce(() => Promise.resolve(oldActivity)) // LAST_ACTIVITY
-        .mockImplementationOnce(() =>
-          Promise.resolve({ session: mockSession, user: mockUser })
-        ); // AUTH_STATE
+        .mockImplementationOnce(() => Promise.resolve({ session: mockSession, user: mockUser })); // AUTH_STATE
 
       const { useAuth } = require('../useAuth');
       const { result } = renderHook(() => useAuth());
@@ -282,9 +280,7 @@ describe('useAuth Hook', () => {
       expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE);
       expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.LAST_ACTIVITY);
       expect(result.current.isAuthenticated).toBe(false);
-      expect(result.current.inactivityError).toBe(
-        "Session expirée après 30 jours d'inactivité"
-      );
+      expect(result.current.inactivityError).toBe("Session expirée après 30 jours d'inactivité");
     });
 
     it('keeps session if activity is less than 30 days ago', async () => {
@@ -353,9 +349,7 @@ describe('useAuth Hook', () => {
   describe('Corrupted Storage (Story 1.14 AC#4)', () => {
     it('handles corrupted storage gracefully', async () => {
       // GIVEN: storageHelpers throws an error
-      (storageHelpers.getJSON as jest.Mock).mockRejectedValue(
-        new Error('Storage corruption')
-      );
+      (storageHelpers.getJSON as jest.Mock).mockRejectedValue(new Error('Storage corruption'));
 
       const { useAuth } = require('../useAuth');
       const { result } = renderHook(() => useAuth());
@@ -467,9 +461,7 @@ describe('useAuth Hook', () => {
       });
 
       // THEN: inactivityError is set for Toast display in _layout.tsx
-      expect(result.current.inactivityError).toBe(
-        "Session expirée après 30 jours d'inactivité"
-      );
+      expect(result.current.inactivityError).toBe("Session expirée après 30 jours d'inactivité");
       // Note: showToast is called by _layout.tsx, not useAuth
     });
   });

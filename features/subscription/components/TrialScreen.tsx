@@ -88,9 +88,7 @@ export const TrialScreen: React.FC = () => {
   const isDisabled = isPending || isInitializing;
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-white dark:bg-gray-900"
-      testID="trial-screen">
+    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" testID="trial-screen">
       {/* Main Content Container */}
       <Animated.View
         entering={FadeIn.duration(500)}
@@ -137,9 +135,7 @@ export const TrialScreen: React.FC = () => {
           <View
             className="mb-4 w-full max-w-sm rounded-lg bg-red-50 p-3 dark:bg-red-900/20"
             accessibilityRole="alert">
-            <Text className="text-center text-sm text-red-600 dark:text-red-400">
-              {error}
-            </Text>
+            <Text className="text-center text-sm text-red-600 dark:text-red-400">{error}</Text>
             {canRetry && (
               <Pressable
                 onPress={handleRetry}
@@ -171,16 +167,10 @@ export const TrialScreen: React.FC = () => {
           accessibilityState={{ disabled: isDisabled }}
           testID="start-trial-button"
           className={`mb-4 min-h-[56px] flex-row items-center justify-center rounded-2xl ${
-            isDisabled
-              ? 'bg-green-400 dark:bg-green-600'
-              : 'bg-green-600 dark:bg-green-500'
+            isDisabled ? 'bg-green-400 dark:bg-green-600' : 'bg-green-600 dark:bg-green-500'
           }`}>
           {isPending || isInitializing ? (
-            <ActivityIndicator
-              color="#FFFFFF"
-              size="small"
-              testID="trial-loading-indicator"
-            />
+            <ActivityIndicator color="#FFFFFF" size="small" testID="trial-loading-indicator" />
           ) : (
             <Text className="text-lg font-semibold text-white">
               Commencer {TRIAL_DAYS} jours gratuits
@@ -202,9 +192,7 @@ export const TrialScreen: React.FC = () => {
           className="min-h-[44px] items-center justify-center">
           <Text
             className={`text-base ${
-              isPending
-                ? 'text-gray-400 dark:text-gray-600'
-                : 'text-gray-600 dark:text-gray-400'
+              isPending ? 'text-gray-400 dark:text-gray-600' : 'text-gray-600 dark:text-gray-400'
             }`}>
             Passer
           </Text>
@@ -227,9 +215,7 @@ const BenefitItem: React.FC<BenefitItemProps> = ({ icon, text }) => (
     <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
       <Ionicons name={icon} size={20} color="#22c55e" />
     </View>
-    <Text className="flex-1 text-base text-gray-700 dark:text-gray-200">
-      {text}
-    </Text>
+    <Text className="flex-1 text-base text-gray-700 dark:text-gray-200">{text}</Text>
   </View>
 );
 
