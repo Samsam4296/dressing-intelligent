@@ -29,6 +29,10 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 /** Allowed MIME types for images */
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
 
+/** Rate limiting: max uploads per profile per minute */
+const RATE_LIMIT_MAX_UPLOADS = 10;
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+
 /** User-facing error messages (sanitized) */
 const ERROR_MESSAGES = {
   MISSING_FIELDS: 'Champs requis manquants',
@@ -41,6 +45,8 @@ const ERROR_MESSAGES = {
   SERVER_ERROR: 'Erreur serveur, veuillez réessayer',
   UPLOAD_TIMEOUT: 'Délai dépassé, veuillez réessayer',
   CONFIG_ERROR: 'Configuration serveur incomplète',
+  RATE_LIMITED: 'Trop de requêtes, veuillez patienter',
+  DUPLICATE_REQUEST: 'Requête déjà traitée',
 } as const;
 
 // =============================================================================
@@ -138,11 +144,11 @@ function logError(context: string, error: unknown, metadata?: Record<string, unk
 // =============================================================================
 
 serve(async (req: Request): Promise<Response> => {
-  // CORS headers
-  // TODO: En production, remplacer '*' par votre domaine
-  // Exemple: 'Access-Control-Allow-Origin': 'https://votre-app.com'
+  // CORS headers - use environment variable for production security
+  // Set ALLOWED_ORIGIN in Supabase secrets for production deployment
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
 
@@ -223,7 +229,57 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ===========================================
-    // 5. Generate idempotent public_id
+    // 5. Rate limiting check
+    // ===========================================
+    const rateLimitCutoff = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+    const { count: recentUploads } = await supabase
+      .from('clothing_items')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', profileId)
+      .gte('created_at', rateLimitCutoff);
+
+    if (recentUploads !== null && recentUploads >= RATE_LIMIT_MAX_UPLOADS) {
+      logError('rate_limit', new Error('Rate limit exceeded'), { profileId, recentUploads });
+      throw new ClientError(ERROR_MESSAGES.RATE_LIMITED, 429);
+    }
+
+    // ===========================================
+    // 6. Check idempotency (prevent duplicate processing)
+    // ===========================================
+    if (idempotencyKey) {
+      const sanitizedUserId = sanitizeUUID(user.id);
+      const sanitizedProfileId = sanitizeUUID(profileId);
+      const expectedPublicId = `clothes/${sanitizedUserId}/${sanitizedProfileId}/${idempotencyKey}`;
+
+      // Check if this idempotency key was already processed
+      const { data: existingItem } = await supabase
+        .from('clothing_items')
+        .select('cloudinary_public_id, original_image_url, processed_image_url')
+        .eq('cloudinary_public_id', expectedPublicId)
+        .single();
+
+      if (existingItem) {
+        // Return cached result instead of re-uploading
+        logError('idempotency', new Error('Duplicate request detected'), { idempotencyKey });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              originalUrl: existingItem.original_image_url,
+              processedUrl: existingItem.processed_image_url,
+              publicId: existingItem.cloudinary_public_id,
+            },
+          }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          }
+        );
+      }
+    }
+
+    // ===========================================
+    // 7. Generate idempotent public_id
     // ===========================================
     // Use client-provided idempotency key to prevent duplicate uploads on retry
     // Falls back to timestamp if not provided (backward compatible)
@@ -233,7 +289,7 @@ serve(async (req: Request): Promise<Response> => {
     const publicId = `clothes/${sanitizedUserId}/${sanitizedProfileId}/${uploadId}`;
 
     // ===========================================
-    // 6. Upload to Cloudinary
+    // 8. Upload to Cloudinary
     // ===========================================
     const uploadResult = await uploadToCloudinary({
       imageBase64,
@@ -242,7 +298,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // ===========================================
-    // 7. Return success response
+    // 9. Return success response
     // ===========================================
     const response: ProcessImageResponse = {
       success: true,
