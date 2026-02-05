@@ -1,4 +1,13 @@
 // Barrel exports for wardrobe feature
-// Add exports as components, hooks, services are created
+// Story 2.1: Capture Photo Camera
 
-export {};
+// Services
+export { cameraService } from './services/cameraService';
+export type { PermissionResult } from './services/cameraService';
+
+// Components
+export { CameraOverlayGuide } from './components/CameraOverlayGuide';
+
+// Screens
+export { CameraScreen } from './screens/CameraScreen';
+export { PhotoPreviewScreen } from './screens/PhotoPreviewScreen';

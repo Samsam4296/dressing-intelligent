@@ -20,6 +20,12 @@
           "organization": "your-sentry-org",
           "project": "dressing-intelligent"
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "L'application a besoin d'accéder à votre caméra pour photographier vos vêtements et construire votre garde-robe."
+        }
       ]
     ],
     "experiments": {

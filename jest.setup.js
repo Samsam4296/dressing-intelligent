@@ -437,6 +437,19 @@ jest.mock('expo-linking', () => ({
   canOpenURL: jest.fn().mockResolvedValue(true),
 }));
 
+// Mock expo-camera (Story 2.1)
+jest.mock('expo-camera', () => ({
+  Camera: {
+    getCameraPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
+    requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
+  },
+  CameraView: 'CameraView',
+  useCameraPermissions: jest.fn(() => [
+    { granted: true, canAskAgain: true },
+    jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
+  ]),
+}));
+
 // Mock @react-native-community/netinfo (Story 1.5)
 jest.mock('@react-native-community/netinfo', () => ({
   fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
