@@ -1,12 +1,59 @@
 /**
  * Wardrobe Feature Types
  * Story 2.3: Détourage automatique
+ * Story 2.4: Catégorisation automatique
  *
- * Type definitions for wardrobe image processing.
+ * Type definitions for wardrobe image processing and categorization.
  */
 
 // ============================================
-// Processing Types (Story 2.3)
+// Category Types (Story 2.4)
+// ============================================
+
+/**
+ * The 6 supported clothing categories
+ */
+export type ClothingCategory = 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire';
+
+/**
+ * Labels français pour affichage UI
+ */
+export const CATEGORY_LABELS: Record<ClothingCategory, string> = {
+  haut: 'Haut',
+  bas: 'Bas',
+  robe: 'Robe',
+  veste: 'Veste',
+  chaussures: 'Chaussures',
+  accessoire: 'Accessoire',
+};
+
+/**
+ * Icônes Ionicons pour chaque catégorie
+ * Note: Ionicons n'a pas d'icône pantalon parfaite, 'resize-outline' évoque une forme verticale
+ */
+export const CATEGORY_ICONS: Record<ClothingCategory, string> = {
+  haut: 'shirt-outline',
+  bas: 'resize-outline', // Forme verticale (pas d'icône pantalon dans Ionicons)
+  robe: 'woman-outline',
+  veste: 'layers-outline',
+  chaussures: 'footsteps-outline',
+  accessoire: 'watch-outline',
+};
+
+/**
+ * Ordre d'affichage des catégories (grille 2x3)
+ */
+export const CATEGORY_ORDER: ClothingCategory[] = [
+  'haut',
+  'bas',
+  'robe',
+  'veste',
+  'chaussures',
+  'accessoire',
+];
+
+// ============================================
+// Processing Types (Story 2.3 + 2.4)
 // ============================================
 
 /**
@@ -21,6 +68,23 @@ export interface ProcessingResult {
   publicId: string;
   /** True if background removal failed and original was kept */
   usedFallback: boolean;
+  // Story 2.4: AI categorization
+  /** Suggested category from AI (undefined if no match or pending) */
+  suggestedCategory?: ClothingCategory;
+  /** Confidence score 0-100 (undefined if no suggestion) */
+  categoryConfidence?: number;
+}
+
+/**
+ * Params for CategorizeScreen navigation (Expo Router string params)
+ */
+export interface CategorySelectionParams {
+  originalUrl: string;
+  processedUrl: string; // '' if null
+  publicId: string;
+  usedFallback: string; // 'true' | 'false'
+  suggestedCategory?: string; // ClothingCategory as string
+  categoryConfidence?: string; // number as string
 }
 
 /**
