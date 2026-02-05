@@ -191,7 +191,7 @@ export const CreateProfileScreen = ({ onSuccess }: CreateProfileScreenProps) => 
       if (onSuccess) {
         onSuccess();
       } else {
-        router.replace('/(auth)/trial');
+        router.replace('/trial');
       }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Une erreur est survenue';

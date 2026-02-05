@@ -42,7 +42,9 @@ export default function Layout() {
 
   // Story 1.14 AC#6: Track user activity on navigation changes
   useEffect(() => {
-    if (!isAuthenticated || segments.length === 0) return;
+    // Skip activity tracking when not authenticated
+    // Note: expo-router guarantees segments is never empty (always has root segment)
+    if (!isAuthenticated) return;
 
     // Check if segments changed (null means first render - always track)
     const isFirstRender = lastSegmentsRef.current === null;
