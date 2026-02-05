@@ -76,7 +76,7 @@ export default function TestEditCategoryScreen() {
         </Pressable>
 
         <Text className="mt-8 px-4 text-center text-xs text-gray-500">
-          ⚠️ Entrez un UUID valide de Supabase pour tester l'update réel.
+          ⚠️ Entrez un UUID valide de Supabase pour tester la mise à jour.
         </Text>
 
         <EditCategoryModal

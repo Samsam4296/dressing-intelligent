@@ -52,7 +52,7 @@ export const useUpdateCategoryMutation = () => {
       const previousItem = queryClient.getQueryData(wardrobeKeys.detail(clothingId));
 
       // Optimistically update list cache
-      queryClient.setQueryData(wardrobeKeys.all, (old: Array<{ id: string; category: string }> | undefined) =>
+      queryClient.setQueryData(wardrobeKeys.all, (old: { id: string; category: string }[] | undefined) =>
         old?.map((item) => (item.id === clothingId ? { ...item, category } : item))
       );
 
