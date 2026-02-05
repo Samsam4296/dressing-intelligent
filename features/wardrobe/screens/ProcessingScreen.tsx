@@ -103,6 +103,13 @@ export const ProcessingScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally run only on mount
   }, []);
 
+  // Stop animation on final states (P2 performance fix)
+  useEffect(() => {
+    if (state === 'success' || state === 'error') {
+      cancelAnimation(rotation);
+    }
+  }, [state, rotation]);
+
   // ============================================
   // Processing Logic
   // ============================================

@@ -7,13 +7,16 @@
  * CRITICAL: Use captureError (NEVER console.log) per project-context.md
  *
  * Features:
+ * - Image compression (max 1500x1500) to reduce memory/network usage
  * - Base64 conversion for upload
+ * - Idempotency key to prevent duplicate uploads on retry
  * - 10s client timeout (NFR-I2)
  * - 1 automatic retry on network error
  * - Graceful fallback when background removal fails
  */
 
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '@/lib/supabase';
 import { captureError } from '@/lib/logger';
 import type { ApiResponse } from '@/types';
@@ -34,6 +37,12 @@ const PROCESSING_TIMEOUT_MS = 10000;
 /** Maximum automatic retries on network error */
 const MAX_RETRIES = 1;
 
+/** Maximum image dimension for compression */
+const MAX_IMAGE_DIMENSION = 1500;
+
+/** JPEG quality for compression (0-1) */
+const COMPRESSION_QUALITY = 0.85;
+
 // ============================================
 // Helper Functions
 // ============================================
@@ -47,6 +56,16 @@ const createProcessingError = (
   retryable = false
 ): ProcessingError => {
   return new ProcessingError(code, message, retryable);
+};
+
+/**
+ * Generates a unique idempotency key for upload deduplication
+ * Format: timestamp_random to ensure uniqueness even on same millisecond
+ */
+const generateIdempotencyKey = (): string => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 10);
+  return `${timestamp}_${random}`;
 };
 
 // ============================================
@@ -76,10 +95,11 @@ interface EdgeFunctionResponse {
 export const imageProcessingService = {
   /**
    * Processes a clothing image via the Edge Function
-   * 1. Converts local URI to base64
-   * 2. Calls Edge Function with authentication
-   * 3. Handles timeout and automatic retry
-   * 4. Returns Cloudinary URLs (original + processed)
+   * 1. Compresses image to reduce memory/network usage
+   * 2. Converts local URI to base64
+   * 3. Calls Edge Function with authentication and idempotency key
+   * 4. Handles timeout and automatic retry
+   * 5. Returns Cloudinary URLs (original + processed)
    *
    * @param photoUri - Local file URI of the image
    * @param profileId - UUID of the active profile
@@ -94,6 +114,9 @@ export const imageProcessingService = {
     profileId: string;
     signal?: AbortSignal;
   }): Promise<ApiResponse<ProcessingResult>> {
+    // Generate idempotency key once for all retry attempts
+    // This prevents duplicate uploads when retrying after network errors
+    const idempotencyKey = generateIdempotencyKey();
     let attempt = 0;
 
     while (attempt <= MAX_RETRIES) {
@@ -108,11 +131,14 @@ export const imageProcessingService = {
           };
         }
 
-        // 1. Convert URI to base64
-        const base64 = await this.uriToBase64(photoUri);
-        const mimeType = this.getMimeType(photoUri);
+        // 1. Compress image to reduce memory and network usage
+        const compressedUri = await this.compressImage(photoUri);
 
-        // 2. Get auth session
+        // 2. Convert compressed image to base64
+        const base64 = await this.uriToBase64(compressedUri);
+        const mimeType = 'image/jpeg'; // Compression outputs JPEG
+
+        // 3. Get auth session
         const {
           data: { session },
           error: authError,
@@ -128,16 +154,17 @@ export const imageProcessingService = {
           };
         }
 
-        // 3. Call Edge Function with timeout
+        // 4. Call Edge Function with timeout and idempotency key
         const response = await this.callEdgeFunction({
           imageBase64: base64,
           profileId,
           mimeType,
+          idempotencyKey,
           accessToken: session.access_token,
           signal,
         });
 
-        // 4. Process response
+        // 5. Process response
         if (!response.success || !response.data) {
           throw createProcessingError(
             'server_error',
@@ -168,11 +195,14 @@ export const imageProcessingService = {
         }
 
         // Log error
-        captureError(error, 'wardrobe', 'imageProcessingService.processImage', { attempt });
+        captureError(error, 'wardrobe', 'imageProcessingService.processImage', {
+          attempt,
+          idempotencyKey,
+        });
 
         // Timeout or network error: retry if possible
         if (isKnownError && error.retryable && attempt <= MAX_RETRIES) {
-          continue; // Silent automatic retry
+          continue; // Silent automatic retry with same idempotency key
         }
 
         // Final error - mark as non-retryable since automatic retries exhausted
@@ -207,11 +237,47 @@ export const imageProcessingService = {
   },
 
   /**
+   * Compresses and resizes an image to reduce memory and network usage
+   * Max dimension: 1500x1500 (sufficient for background removal quality)
+   * Output: JPEG with 85% quality
+   *
+   * @param uri - Local file URI of the original image
+   * @returns URI of the compressed image
+   */
+  async compressImage(uri: string): Promise<string> {
+    try {
+      // Get original image info to determine resize ratio
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [
+          {
+            resize: {
+              width: MAX_IMAGE_DIMENSION,
+              height: MAX_IMAGE_DIMENSION,
+            },
+          },
+        ],
+        {
+          compress: COMPRESSION_QUALITY,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+
+      return result.uri;
+    } catch (error) {
+      // If compression fails, use original (fallback)
+      captureError(error, 'wardrobe', 'imageProcessingService.compressImage');
+      return uri;
+    }
+  },
+
+  /**
    * Calls the Edge Function with timeout management
    *
    * @param imageBase64 - Base64 encoded image (without data: prefix)
    * @param profileId - UUID of the active profile
    * @param mimeType - MIME type of the image
+   * @param idempotencyKey - Unique key to prevent duplicate uploads
    * @param accessToken - Supabase access token
    * @param signal - Optional external AbortSignal
    */
@@ -219,12 +285,14 @@ export const imageProcessingService = {
     imageBase64,
     profileId,
     mimeType,
+    idempotencyKey,
     accessToken,
     signal,
   }: {
     imageBase64: string;
     profileId: string;
     mimeType: string;
+    idempotencyKey: string;
     accessToken: string;
     signal?: AbortSignal;
   }): Promise<EdgeFunctionResponse> {
@@ -232,21 +300,30 @@ export const imageProcessingService = {
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), PROCESSING_TIMEOUT_MS);
 
-    // Combine external signal and timeout
-    // TODO: Implement Promise.race pattern for true request abortion
-    // Currently Supabase SDK doesn't accept AbortSignal in invoke options
+    // Combine external signal and timeout for early cancellation detection
     const combinedSignal = signal
       ? this.combineAbortSignals(signal, timeoutController.signal)
       : timeoutController.signal;
 
     try {
-      const { data, error } = await supabase.functions.invoke<EdgeFunctionResponse>(
+      // Use Promise.race to implement true timeout with Supabase SDK
+      const invokePromise = supabase.functions.invoke<EdgeFunctionResponse>(
         'process-clothing-image',
         {
-          body: { imageBase64, profileId, mimeType },
+          body: { imageBase64, profileId, mimeType, idempotencyKey },
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
+
+      // Timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        combinedSignal.addEventListener('abort', () => {
+          reject(new Error(signal?.aborted ? 'cancelled' : 'timeout'));
+        });
+      });
+
+      // Race between invoke and timeout/cancellation
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
 
       clearTimeout(timeoutId);
 
@@ -263,13 +340,14 @@ export const imageProcessingService = {
     } catch (error) {
       clearTimeout(timeoutId);
 
-      // Check for abort
-      if ((error as Error).name === 'AbortError') {
-        // Distinguish timeout vs user cancellation
-        if (signal?.aborted) {
+      // Handle abort/timeout
+      if (error instanceof Error) {
+        if (error.message === 'cancelled' || signal?.aborted) {
           throw createProcessingError('cancelled', 'Traitement annulé');
         }
-        throw createProcessingError('timeout', 'Délai dépassé (10s), réessayez', true);
+        if (error.message === 'timeout' || error.name === 'AbortError') {
+          throw createProcessingError('timeout', 'Délai dépassé (10s), réessayez', true);
+        }
       }
 
       // Network error detection

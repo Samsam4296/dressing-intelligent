@@ -6,17 +6,52 @@
 // 2. Applique le background removal (détourage)
 // 3. Retourne les URLs (originale + traitée)
 //
-// Sécurité: Les credentials Cloudinary sont dans Supabase Secrets
+// Sécurité:
+// - Credentials Cloudinary dans Supabase Secrets
+// - Validation UUID, taille, MIME type
+// - Idempotency key pour éviter les duplications
+// - Messages d'erreur sanitisés
 // =============================================================================
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
 
+// =============================================================================
+// Constants
+// =============================================================================
+
+/** Maximum base64 size in characters (~10MB image = ~13.3MB base64) */
+const MAX_BASE64_SIZE = 15_000_000;
+
+/** UUID v4 regex pattern */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Allowed MIME types for images */
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+
+/** User-facing error messages (sanitized) */
+const ERROR_MESSAGES = {
+  MISSING_FIELDS: 'Champs requis manquants',
+  INVALID_PROFILE_ID: 'Identifiant de profil invalide',
+  IMAGE_TOO_LARGE: 'Image trop volumineuse (max 10MB)',
+  INVALID_MIME_TYPE: 'Format d\'image non supporté',
+  MISSING_AUTH: 'Authentification requise',
+  UNAUTHORIZED: 'Non autorisé',
+  PROFILE_NOT_FOUND: 'Profil non trouvé',
+  SERVER_ERROR: 'Erreur serveur, veuillez réessayer',
+  UPLOAD_TIMEOUT: 'Délai dépassé, veuillez réessayer',
+  CONFIG_ERROR: 'Configuration serveur incomplète',
+} as const;
+
+// =============================================================================
 // Types
+// =============================================================================
+
 interface ProcessImageRequest {
   imageBase64: string;
   profileId: string;
   mimeType?: string;
+  idempotencyKey?: string;
 }
 
 interface ProcessImageResponse {
@@ -35,17 +70,77 @@ interface CloudinaryUploadResponse {
   eager?: Array<{ secure_url: string }>;
 }
 
-// Cloudinary credentials from Supabase Secrets
+// =============================================================================
+// Environment Variables
+// =============================================================================
+
 const CLOUDINARY_CLOUD_NAME = Deno.env.get('CLOUDINARY_CLOUD_NAME')!;
 const CLOUDINARY_API_KEY = Deno.env.get('CLOUDINARY_API_KEY')!;
 const CLOUDINARY_API_SECRET = Deno.env.get('CLOUDINARY_API_SECRET')!;
-
-// Supabase client
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+// =============================================================================
+// Validation Helpers
+// =============================================================================
+
+/**
+ * Validates UUID v4 format
+ */
+function isValidUUID(value: string): boolean {
+  return UUID_REGEX.test(value);
+}
+
+/**
+ * Validates MIME type against whitelist
+ */
+function isValidMimeType(mimeType: string): boolean {
+  return ALLOWED_MIME_TYPES.includes(mimeType);
+}
+
+/**
+ * Sanitizes UUID for path construction (defense-in-depth)
+ */
+function sanitizeUUID(uuid: string): string {
+  return uuid.replace(/[^a-f0-9-]/gi, '');
+}
+
+// =============================================================================
+// Error Helpers
+// =============================================================================
+
+class ClientError extends Error {
+  constructor(
+    public readonly userMessage: string,
+    public readonly statusCode: number = 400,
+    internalMessage?: string
+  ) {
+    super(internalMessage || userMessage);
+    this.name = 'ClientError';
+  }
+}
+
+/**
+ * Logs error server-side without exposing details to client
+ * Note: In production, integrate with Sentry or similar service
+ */
+function logError(context: string, error: unknown, metadata?: Record<string, unknown>): void {
+  // Server-side logging only
+  console.error(`[${context}]`, {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    ...metadata,
+  });
+}
+
+// =============================================================================
+// Main Handler
+// =============================================================================
+
 serve(async (req: Request): Promise<Response> => {
   // CORS headers
+  // TODO: En production, remplacer '*' par votre domaine
+  // Exemple: 'Access-Control-Allow-Origin': 'https://votre-app.com'
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -57,26 +152,46 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Validate credentials are set
+    // ===========================================
+    // 1. Validate server configuration
+    // ===========================================
     if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
-      throw new Error('Cloudinary credentials not configured in Supabase Secrets');
+      logError('config', new Error('Missing Cloudinary credentials'));
+      throw new ClientError(ERROR_MESSAGES.CONFIG_ERROR, 500);
     }
 
-    // Parse request
-    const {
-      imageBase64,
-      profileId,
-      mimeType = 'image/jpeg',
-    }: ProcessImageRequest = await req.json();
+    // ===========================================
+    // 2. Parse and validate request body
+    // ===========================================
+    const body: ProcessImageRequest = await req.json();
+    const { imageBase64, profileId, mimeType = 'image/jpeg', idempotencyKey } = body;
 
+    // Required fields
     if (!imageBase64 || !profileId) {
-      throw new Error('Missing required fields: imageBase64, profileId');
+      throw new ClientError(ERROR_MESSAGES.MISSING_FIELDS);
     }
 
-    // Authenticate user
+    // UUID format validation
+    if (!isValidUUID(profileId)) {
+      throw new ClientError(ERROR_MESSAGES.INVALID_PROFILE_ID);
+    }
+
+    // Base64 size validation (prevents DoS)
+    if (imageBase64.length > MAX_BASE64_SIZE) {
+      throw new ClientError(ERROR_MESSAGES.IMAGE_TOO_LARGE);
+    }
+
+    // MIME type whitelist validation
+    if (!isValidMimeType(mimeType)) {
+      throw new ClientError(ERROR_MESSAGES.INVALID_MIME_TYPE);
+    }
+
+    // ===========================================
+    // 3. Authenticate user
+    // ===========================================
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing Authorization header');
+      throw new ClientError(ERROR_MESSAGES.MISSING_AUTH, 401);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -86,11 +201,15 @@ serve(async (req: Request): Promise<Response> => {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser(token);
+
     if (authError || !user) {
-      throw new Error('Unauthorized');
+      logError('auth', authError || new Error('No user found'));
+      throw new ClientError(ERROR_MESSAGES.UNAUTHORIZED, 401);
     }
 
-    // Verify profile belongs to user
+    // ===========================================
+    // 4. Verify profile ownership
+    // ===========================================
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, user_id')
@@ -99,20 +218,32 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (profileError || !profile) {
-      throw new Error('Profile not found or unauthorized');
+      logError('profile', profileError || new Error('Profile not found'), { profileId, userId: user.id });
+      throw new ClientError(ERROR_MESSAGES.PROFILE_NOT_FOUND, 404);
     }
 
-    // Generate unique public_id for Cloudinary
-    const timestamp = Date.now();
-    const publicId = `clothes/${user.id}/${profileId}/${timestamp}`;
+    // ===========================================
+    // 5. Generate idempotent public_id
+    // ===========================================
+    // Use client-provided idempotency key to prevent duplicate uploads on retry
+    // Falls back to timestamp if not provided (backward compatible)
+    const sanitizedUserId = sanitizeUUID(user.id);
+    const sanitizedProfileId = sanitizeUUID(profileId);
+    const uploadId = idempotencyKey || `${Date.now()}`;
+    const publicId = `clothes/${sanitizedUserId}/${sanitizedProfileId}/${uploadId}`;
 
-    // Upload to Cloudinary with background removal
+    // ===========================================
+    // 6. Upload to Cloudinary
+    // ===========================================
     const uploadResult = await uploadToCloudinary({
       imageBase64,
       mimeType,
       publicId,
     });
 
+    // ===========================================
+    // 7. Return success response
+    // ===========================================
     const response: ProcessImageResponse = {
       success: true,
       data: {
@@ -127,19 +258,37 @@ serve(async (req: Request): Promise<Response> => {
       status: 200,
     });
   } catch (error) {
-    console.error('Error processing image:', error);
+    // ===========================================
+    // Error Handling - Sanitized responses
+    // ===========================================
 
-    const response: ProcessImageResponse = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+    // Known client errors - return user-friendly message
+    if (error instanceof ClientError) {
+      logError('client_error', error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.userMessage }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: error.statusCode,
+        }
+      );
+    }
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 400,
-    });
+    // Unknown errors - log details, return generic message
+    logError('unknown_error', error);
+    return new Response(
+      JSON.stringify({ success: false, error: ERROR_MESSAGES.SERVER_ERROR }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    );
   }
 });
+
+// =============================================================================
+// Cloudinary Upload
+// =============================================================================
 
 /**
  * Upload image to Cloudinary with background removal
@@ -185,11 +334,11 @@ async function uploadToCloudinary({
   formData.append('timestamp', timestamp.toString());
   formData.append('api_key', CLOUDINARY_API_KEY);
   formData.append('signature', signature);
-  formData.append('eager', 'e_background_removal'); // Background removal transformation
+  formData.append('eager', 'e_background_removal');
 
-  // Upload with timeout (10s as per NFR-I2)
+  // Upload with timeout (8s to leave buffer for client's 10s timeout)
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(uploadUrl, {
@@ -202,7 +351,8 @@ async function uploadToCloudinary({
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Cloudinary upload failed: ${JSON.stringify(errorData)}`);
+      logError('cloudinary', new Error('Upload failed'), { errorData });
+      throw new ClientError(ERROR_MESSAGES.SERVER_ERROR, 500);
     }
 
     const result: CloudinaryUploadResponse = await response.json();
@@ -211,8 +361,16 @@ async function uploadToCloudinary({
     clearTimeout(timeoutId);
 
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Cloudinary upload timeout (10s) - image saved without background removal');
+      throw new ClientError(ERROR_MESSAGES.UPLOAD_TIMEOUT, 408);
     }
-    throw error;
+
+    // Re-throw ClientError as-is
+    if (error instanceof ClientError) {
+      throw error;
+    }
+
+    // Wrap unknown errors
+    logError('cloudinary_unknown', error);
+    throw new ClientError(ERROR_MESSAGES.SERVER_ERROR, 500);
   }
 }

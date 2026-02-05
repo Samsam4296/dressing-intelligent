@@ -16,6 +16,10 @@ import { ProcessingError } from '../../types/wardrobe.types';
 // ============================================
 
 jest.mock('expo-file-system');
+jest.mock('expo-image-manipulator', () => ({
+  manipulateAsync: jest.fn().mockResolvedValue({ uri: 'compressed-file:///test-photo.jpg' }),
+  SaveFormat: { JPEG: 'jpeg', PNG: 'png' },
+}));
 jest.mock('@/lib/supabase', () => ({
   supabase: {
     auth: { getSession: jest.fn() },
@@ -106,6 +110,7 @@ describe('imageProcessingService', () => {
             imageBase64: 'base64-image-data-here',
             profileId: 'profile-123',
             mimeType: 'image/jpeg',
+            idempotencyKey: expect.any(String), // Dynamically generated
           },
         })
       );
