@@ -121,12 +121,10 @@ describe('useUpdateCategoryMutation', () => {
 
       await waitFor(() => expect(result.current.isError).toBe(true));
 
-      expect(captureError).toHaveBeenCalledWith(
-        error,
-        'wardrobe',
-        'updateCategory',
-        { clothingId: '123', category: 'bas' }
-      );
+      expect(captureError).toHaveBeenCalledWith(error, 'wardrobe', 'updateCategory', {
+        clothingId: '123',
+        category: 'bas',
+      });
 
       expect(showToast).toHaveBeenCalledWith({
         type: 'error',

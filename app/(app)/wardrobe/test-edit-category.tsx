@@ -70,8 +70,7 @@ export default function TestEditCategoryScreen() {
           className="min-h-[44px] min-w-[200px] items-center justify-center rounded-lg bg-blue-600 px-6 py-3"
           accessibilityRole="button"
           accessibilityLabel="Modifier la catégorie"
-          testID="open-modal-button"
-        >
+          testID="open-modal-button">
           <Text className="font-semibold text-white">Modifier catégorie</Text>
         </Pressable>
 

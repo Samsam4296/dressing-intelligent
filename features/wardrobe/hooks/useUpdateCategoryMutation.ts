@@ -52,13 +52,16 @@ export const useUpdateCategoryMutation = () => {
       const previousItem = queryClient.getQueryData(wardrobeKeys.detail(clothingId));
 
       // Optimistically update list cache
-      queryClient.setQueryData(wardrobeKeys.all, (old: { id: string; category: string }[] | undefined) =>
-        old?.map((item) => (item.id === clothingId ? { ...item, category } : item))
+      queryClient.setQueryData(
+        wardrobeKeys.all,
+        (old: { id: string; category: string }[] | undefined) =>
+          old?.map((item) => (item.id === clothingId ? { ...item, category } : item))
       );
 
       // Optimistically update item cache
-      queryClient.setQueryData(wardrobeKeys.detail(clothingId), (old: { category: string } | undefined) =>
-        old ? { ...old, category } : old
+      queryClient.setQueryData(
+        wardrobeKeys.detail(clothingId),
+        (old: { category: string } | undefined) => (old ? { ...old, category } : old)
       );
 
       return { previousClothes, previousItem };

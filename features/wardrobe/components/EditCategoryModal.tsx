@@ -57,12 +57,8 @@ export const EditCategoryModal = memo(function EditCategoryModal({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View
-        className="flex-1 bg-gray-900 dark:bg-black"
-        testID="edit-category-modal"
-      >
+      onRequestClose={onClose}>
+      <View className="flex-1 bg-gray-900 dark:bg-black" testID="edit-category-modal">
         {/* Header */}
         <View className="flex-row items-center justify-between px-4 pb-4 pt-12">
           <Pressable
@@ -71,25 +67,19 @@ export const EditCategoryModal = memo(function EditCategoryModal({
             accessibilityRole="button"
             accessibilityLabel="Fermer"
             disabled={isLoading}
-            testID="close-button"
-          >
+            testID="close-button">
             {/* P3-03: Theme-aware icon color */}
             <Ionicons name="close" size={24} color={isDark ? '#E5E7EB' : '#FFFFFF'} />
           </Pressable>
 
-          <Text className="text-lg font-semibold text-white">
-            Modifier catégorie
-          </Text>
+          <Text className="text-lg font-semibold text-white">Modifier catégorie</Text>
 
           <View className="min-w-[44px]" />
         </View>
 
         {/* Category Selection */}
         <View className="flex-1 justify-center px-4">
-          <CategorySelector
-            selectedCategory={selectedCategory}
-            onSelect={setSelectedCategory}
-          />
+          <CategorySelector selectedCategory={selectedCategory} onSelect={setSelectedCategory} />
         </View>
 
         {/* Actions */}
@@ -103,8 +93,7 @@ export const EditCategoryModal = memo(function EditCategoryModal({
             accessibilityRole="button"
             accessibilityLabel="Confirmer la modification"
             accessibilityState={{ disabled: isDisabled }}
-            testID="confirm-button"
-          >
+            testID="confirm-button">
             {isLoading ? (
               <ActivityIndicator color="white" testID="loading-indicator" />
             ) : (
