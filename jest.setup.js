@@ -437,6 +437,23 @@ jest.mock('expo-linking', () => ({
   canOpenURL: jest.fn().mockResolvedValue(true),
 }));
 
+// Mock expo-file-system (Story 2.2)
+jest.mock('expo-file-system', () => ({
+  documentDirectory: 'file:///mock-document-directory/',
+  cacheDirectory: 'file:///mock-cache-directory/',
+  getInfoAsync: jest.fn().mockResolvedValue({ exists: true, size: 1024 * 1024 }),
+  readAsStringAsync: jest.fn().mockResolvedValue(''),
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  deleteAsync: jest.fn().mockResolvedValue(undefined),
+  copyAsync: jest.fn().mockResolvedValue(undefined),
+  makeDirectoryAsync: jest.fn().mockResolvedValue(undefined),
+  readDirectoryAsync: jest.fn().mockResolvedValue([]),
+  EncodingType: {
+    UTF8: 'utf8',
+    Base64: 'base64',
+  },
+}));
+
 // Mock expo-camera (Story 2.1)
 jest.mock('expo-camera', () => ({
   Camera: {
