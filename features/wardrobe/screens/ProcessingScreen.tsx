@@ -25,7 +25,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { imageProcessingService } from '../services/imageProcessingService';
-import { isProcessingError, type ProcessingError } from '../types/wardrobe.types';
+import { isProcessingError } from '../types/wardrobe.types';
 import { useProfileStore } from '@/features/profiles';
 import { showToast } from '@/shared/components/Toast';
 import { captureError } from '@/lib/logger';
@@ -184,6 +184,9 @@ export const ProcessingScreen = () => {
               processedUrl: data.processedUrl ?? '',
               publicId: data.publicId,
               usedFallback: data.usedFallback ? 'true' : 'false',
+              // Story 2.4: AI categorization params
+              suggestedCategory: data.suggestedCategory ?? '',
+              categoryConfidence: data.categoryConfidence?.toString() ?? '',
             },
           });
         }
@@ -214,7 +217,7 @@ export const ProcessingScreen = () => {
 
   return (
     <View
-      className="flex-1 items-center justify-center bg-gray-900 dark:bg-black px-6"
+      className="flex-1 items-center justify-center bg-gray-900 px-6 dark:bg-black"
       testID="processing-screen"
       accessibilityRole="none"
       accessibilityLabel="Écran de traitement d'image">

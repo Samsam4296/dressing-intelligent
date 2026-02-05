@@ -16,6 +16,7 @@
  */
 
 import * as FileSystem from 'expo-file-system';
+import { EncodingType } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '@/lib/supabase';
 import { captureError } from '@/lib/logger';
@@ -78,6 +79,9 @@ interface EdgeFunctionResponse {
     originalUrl: string;
     processedUrl: string | null;
     publicId: string;
+    // Story 2.4: AI categorization
+    suggestedCategory?: string;
+    categoryConfidence?: number;
   };
   error?: string;
 }
@@ -166,11 +170,7 @@ export const imageProcessingService = {
 
         // 5. Process response
         if (!response.success || !response.data) {
-          throw createProcessingError(
-            'server_error',
-            response.error || 'Erreur serveur',
-            true
-          );
+          throw createProcessingError('server_error', response.error || 'Erreur serveur', true);
         }
 
         return {
@@ -179,6 +179,11 @@ export const imageProcessingService = {
             processedUrl: response.data.processedUrl,
             publicId: response.data.publicId,
             usedFallback: response.data.processedUrl === null,
+            // Story 2.4: AI categorization
+            suggestedCategory: response.data.suggestedCategory as
+              | import('../types/wardrobe.types').ClothingCategory
+              | undefined,
+            categoryConfidence: response.data.categoryConfidence,
           },
           error: null,
         };
@@ -228,11 +233,7 @@ export const imageProcessingService = {
     // Should never reach here
     return {
       data: null,
-      error: createProcessingError(
-        'network_error',
-        'Échec après plusieurs tentatives',
-        false
-      ),
+      error: createProcessingError('network_error', 'Échec après plusieurs tentatives', false),
     };
   },
 
@@ -378,7 +379,7 @@ export const imageProcessingService = {
    */
   async uriToBase64(uri: string): Promise<string> {
     const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: EncodingType.Base64,
     });
     return base64;
   },

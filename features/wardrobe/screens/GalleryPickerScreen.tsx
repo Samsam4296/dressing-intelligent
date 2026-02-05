@@ -127,9 +127,7 @@ export const GalleryPickerScreen = () => {
       accessibilityRole="none"
       accessibilityLabel="Écran de sélection galerie">
       <ActivityIndicator size="large" color="#3B82F6" testID="gallery-loading" />
-      <Text
-        className="mt-4 px-6 text-center text-gray-400"
-        accessibilityLiveRegion="polite">
+      <Text className="mt-4 px-6 text-center text-gray-400" accessibilityLiveRegion="polite">
         {state === 'picking' && 'Sélectionnez une image...'}
         {state === 'validating' && 'Validation en cours...'}
         {state === 'error' && 'Erreur de sélection'}

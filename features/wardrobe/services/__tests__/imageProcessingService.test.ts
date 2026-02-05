@@ -44,7 +44,8 @@ describe('imageProcessingService', () => {
     success: true,
     data: {
       originalUrl: 'https://res.cloudinary.com/demo/image/upload/v1234567890/original.jpg',
-      processedUrl: 'https://res.cloudinary.com/demo/image/upload/e_background_removal/v1234567890/processed.jpg',
+      processedUrl:
+        'https://res.cloudinary.com/demo/image/upload/e_background_removal/v1234567890/processed.jpg',
       publicId: 'clothes/user-123/profile-456/1234567890',
     },
   };

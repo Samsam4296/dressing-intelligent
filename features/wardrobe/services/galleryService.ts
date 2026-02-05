@@ -44,11 +44,7 @@ export interface GalleryImageResult {
 /**
  * Gallery error codes for error handling
  */
-export type GalleryErrorCode =
-  | 'cancelled'
-  | 'file_too_large'
-  | 'invalid_format'
-  | 'picker_error';
+export type GalleryErrorCode = 'cancelled' | 'file_too_large' | 'invalid_format' | 'picker_error';
 
 /**
  * Gallery-specific error class with error code

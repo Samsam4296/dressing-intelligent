@@ -175,7 +175,9 @@ describe('galleryService', () => {
 
     it('handles URI with query params', () => {
       expect(galleryService.getFileExtension('file:///image.jpg?token=abc123')).toBe('jpg');
-      expect(galleryService.getFileExtension('https://cdn.example.com/photo.png?size=large&v=2')).toBe('png');
+      expect(
+        galleryService.getFileExtension('https://cdn.example.com/photo.png?size=large&v=2')
+      ).toBe('png');
     });
 
     it('handles URI with hash fragment', () => {
@@ -199,23 +201,15 @@ describe('galleryService', () => {
         size: 5 * 1024 * 1024, // 5MB
       });
 
-      const result = await galleryService.getFileSize(
-        'file:///test.jpg',
-        3 * 1024 * 1024
-      );
+      const result = await galleryService.getFileSize('file:///test.jpg', 3 * 1024 * 1024);
 
       expect(result).toBe(5 * 1024 * 1024); // FileSystem takes priority
     });
 
     it('falls back to assetFileSize when FileSystem fails', async () => {
-      (FileSystem.getInfoAsync as jest.Mock).mockRejectedValue(
-        new Error('Access denied')
-      );
+      (FileSystem.getInfoAsync as jest.Mock).mockRejectedValue(new Error('Access denied'));
 
-      const result = await galleryService.getFileSize(
-        'file:///test.jpg',
-        8 * 1024 * 1024
-      );
+      const result = await galleryService.getFileSize('file:///test.jpg', 8 * 1024 * 1024);
 
       expect(result).toBe(8 * 1024 * 1024); // Fallback to asset.fileSize
     });
@@ -225,10 +219,7 @@ describe('galleryService', () => {
         exists: false,
       });
 
-      const result = await galleryService.getFileSize(
-        'file:///test.jpg',
-        2 * 1024 * 1024
-      );
+      const result = await galleryService.getFileSize('file:///test.jpg', 2 * 1024 * 1024);
 
       expect(result).toBe(2 * 1024 * 1024); // Fallback to asset.fileSize
     });
@@ -247,10 +238,7 @@ describe('galleryService', () => {
         // No size property
       });
 
-      const result = await galleryService.getFileSize(
-        'file:///test.jpg',
-        4 * 1024 * 1024
-      );
+      const result = await galleryService.getFileSize('file:///test.jpg', 4 * 1024 * 1024);
 
       expect(result).toBe(4 * 1024 * 1024);
     });

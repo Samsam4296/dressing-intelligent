@@ -201,9 +201,7 @@ describe('GalleryPickerScreen', () => {
     });
 
     // Error haptic feedback
-    expect(Haptics.notificationAsync).toHaveBeenCalledWith(
-      Haptics.NotificationFeedbackType.Error
-    );
+    expect(Haptics.notificationAsync).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Error);
 
     // Advance timer to trigger retry
     await act(async () => {
@@ -223,7 +221,10 @@ describe('GalleryPickerScreen', () => {
       if (callCount === 1) {
         return {
           data: null,
-          error: new GalleryError('invalid_format', 'Format non supporté. Formats acceptés: jpg, jpeg, png, heic, heif, webp'),
+          error: new GalleryError(
+            'invalid_format',
+            'Format non supporté. Formats acceptés: jpg, jpeg, png, heic, heif, webp'
+          ),
         };
       }
       return {
@@ -275,9 +276,7 @@ describe('GalleryPickerScreen', () => {
   // ============================================
 
   it('has proper accessibility attributes', async () => {
-    (galleryService.pickImage as jest.Mock).mockImplementation(
-      () => new Promise(() => {})
-    );
+    (galleryService.pickImage as jest.Mock).mockImplementation(() => new Promise(() => {}));
 
     render(<GalleryPickerScreen />);
 

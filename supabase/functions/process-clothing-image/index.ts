@@ -4,7 +4,8 @@
 // Traite les photos de vêtements:
 // 1. Upload vers Cloudinary
 // 2. Applique le background removal (détourage)
-// 3. Retourne les URLs (originale + traitée)
+// 3. Catégorisation automatique via Imagga AI (Story 2.4)
+// 4. Retourne les URLs (originale + traitée) + catégorie suggérée
 //
 // Sécurité:
 // - Credentials Cloudinary dans Supabase Secrets
@@ -33,12 +34,81 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif
 const RATE_LIMIT_MAX_UPLOADS = 10;
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 
+// =============================================================================
+// Clothing Categories (Story 2.4)
+// =============================================================================
+
+/** The 6 supported clothing categories */
+type ClothingCategory = 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire';
+
+/** Mapping from Cloudinary Imagga tags to our categories */
+const CATEGORY_TAG_MAPPING: Record<string, ClothingCategory> = {
+  // Hauts
+  shirt: 'haut',
+  't-shirt': 'haut',
+  tshirt: 'haut',
+  blouse: 'haut',
+  sweater: 'haut',
+  pullover: 'haut',
+  hoodie: 'haut',
+  top: 'haut',
+  polo: 'haut',
+  'tank top': 'haut',
+  cardigan: 'haut',
+
+  // Bas
+  pants: 'bas',
+  trousers: 'bas',
+  jeans: 'bas',
+  shorts: 'bas',
+  skirt: 'bas',
+  leggings: 'bas',
+
+  // Robes
+  dress: 'robe',
+  gown: 'robe',
+  jumpsuit: 'robe',
+  romper: 'robe',
+
+  // Vestes
+  jacket: 'veste',
+  coat: 'veste',
+  blazer: 'veste',
+  vest: 'veste',
+  parka: 'veste',
+  windbreaker: 'veste',
+
+  // Chaussures
+  shoes: 'chaussures',
+  sneakers: 'chaussures',
+  boots: 'chaussures',
+  sandals: 'chaussures',
+  heels: 'chaussures',
+  loafers: 'chaussures',
+  slippers: 'chaussures',
+
+  // Accessoires
+  hat: 'accessoire',
+  cap: 'accessoire',
+  scarf: 'accessoire',
+  belt: 'accessoire',
+  bag: 'accessoire',
+  handbag: 'accessoire',
+  backpack: 'accessoire',
+  watch: 'accessoire',
+  jewelry: 'accessoire',
+  glasses: 'accessoire',
+  sunglasses: 'accessoire',
+  tie: 'accessoire',
+  gloves: 'accessoire',
+};
+
 /** User-facing error messages (sanitized) */
 const ERROR_MESSAGES = {
   MISSING_FIELDS: 'Champs requis manquants',
   INVALID_PROFILE_ID: 'Identifiant de profil invalide',
   IMAGE_TOO_LARGE: 'Image trop volumineuse (max 10MB)',
-  INVALID_MIME_TYPE: 'Format d\'image non supporté',
+  INVALID_MIME_TYPE: "Format d'image non supporté",
   MISSING_AUTH: 'Authentification requise',
   UNAUTHORIZED: 'Non autorisé',
   PROFILE_NOT_FOUND: 'Profil non trouvé',
@@ -66,6 +136,9 @@ interface ProcessImageResponse {
     originalUrl: string;
     processedUrl: string | null;
     publicId: string;
+    // Story 2.4: AI categorization
+    suggestedCategory?: ClothingCategory;
+    categoryConfidence?: number; // 0-100
   };
   error?: string;
 }
@@ -74,6 +147,19 @@ interface CloudinaryUploadResponse {
   secure_url: string;
   public_id: string;
   eager?: Array<{ secure_url: string }>;
+  // Story 2.4: Imagga tagging response
+  tags?: string[];
+  info?: {
+    categorization?: {
+      imagga_tagging?: {
+        status: string; // 'complete' | 'pending'
+        data: Array<{
+          tag: string;
+          confidence: number; // 0.0 - 1.0
+        }>;
+      };
+    };
+  };
 }
 
 // =============================================================================
@@ -109,6 +195,37 @@ function isValidMimeType(mimeType: string): boolean {
  */
 function sanitizeUUID(uuid: string): string {
   return uuid.replace(/[^a-f0-9-]/gi, '');
+}
+
+// =============================================================================
+// Category Mapping (Story 2.4)
+// =============================================================================
+
+/**
+ * Maps Cloudinary Imagga tags to our 6 clothing categories
+ * Returns the category with highest confidence, or null if no match
+ * @param tags - Array of tags with confidence (0.0-1.0 scale from Cloudinary)
+ * @returns Category and confidence (0-100 scale) or null
+ */
+function mapCloudinaryTagsToCategory(
+  tags: Array<{ tag: string; confidence: number }>
+): { category: ClothingCategory; confidence: number } | null {
+  if (!tags?.length) return null;
+
+  // Sort by confidence descending
+  const sortedTags = [...tags].sort((a, b) => b.confidence - a.confidence);
+
+  // Find first matching tag
+  for (const { tag, confidence } of sortedTags) {
+    const normalizedTag = tag.toLowerCase().trim();
+    const category = CATEGORY_TAG_MAPPING[normalizedTag];
+    if (category) {
+      // Convert from 0.0-1.0 to 0-100 scale
+      return { category, confidence: Math.round(confidence * 100) };
+    }
+  }
+
+  return null;
 }
 
 // =============================================================================
@@ -228,7 +345,10 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (profileError || !profile) {
-      logError('profile', profileError || new Error('Profile not found'), { profileId, userId: user.id });
+      logError('profile', profileError || new Error('Profile not found'), {
+        profileId,
+        userId: user.id,
+      });
       throw new ClientError(ERROR_MESSAGES.PROFILE_NOT_FOUND, 404);
     }
 
@@ -322,7 +442,25 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     // ===========================================
-    // 9. Return success response
+    // 9. Map Imagga tags to category (Story 2.4)
+    // ===========================================
+    let suggestedCategory: ClothingCategory | undefined;
+    let categoryConfidence: number | undefined;
+
+    // Check if Imagga tagging is complete (not 'pending')
+    const imaggaResult = uploadResult.info?.categorization?.imagga_tagging;
+    if (imaggaResult?.status === 'complete' && imaggaResult.data?.length) {
+      const mapping = mapCloudinaryTagsToCategory(imaggaResult.data);
+      if (mapping) {
+        suggestedCategory = mapping.category;
+        categoryConfidence = mapping.confidence;
+      }
+    }
+    // If status === 'pending' or no match: suggestedCategory remains undefined
+    // Client will show "Sélectionnez une catégorie" without pre-selection
+
+    // ===========================================
+    // 10. Return success response
     // ===========================================
     const response: ProcessImageResponse = {
       success: true,
@@ -330,6 +468,9 @@ serve(async (req: Request): Promise<Response> => {
         originalUrl: uploadResult.secure_url,
         processedUrl: uploadResult.eager?.[0]?.secure_url || null,
         publicId: uploadResult.public_id,
+        // Story 2.4: AI categorization
+        suggestedCategory,
+        categoryConfidence,
       },
     };
 
@@ -345,24 +486,18 @@ serve(async (req: Request): Promise<Response> => {
     // Known client errors - return user-friendly message
     if (error instanceof ClientError) {
       logError('client_error', error);
-      return new Response(
-        JSON.stringify({ success: false, error: error.userMessage }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: error.statusCode,
-        }
-      );
+      return new Response(JSON.stringify({ success: false, error: error.userMessage }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: error.statusCode,
+      });
     }
 
     // Unknown errors - log details, return generic message
     logError('unknown_error', error);
-    return new Response(
-      JSON.stringify({ success: false, error: ERROR_MESSAGES.SERVER_ERROR }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      }
-    );
+    return new Response(JSON.stringify({ success: false, error: ERROR_MESSAGES.SERVER_ERROR }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });
 
@@ -390,8 +525,10 @@ async function uploadToCloudinary({
   // Generate signature for authenticated upload
   const timestamp = Math.floor(Date.now() / 1000);
 
-  // Parameters for signature (alphabetically sorted)
+  // Parameters for signature (alphabetically sorted - CRITICAL for signature validation)
+  // Story 2.4: Added categorization=imagga_tagging for AI auto-tagging
   const paramsToSign = [
+    `categorization=imagga_tagging`, // Story 2.4: AI categorization
     `eager=e_background_removal`,
     `folder=dressing-intelligent`,
     `public_id=${publicId}`,
@@ -414,6 +551,7 @@ async function uploadToCloudinary({
   formData.append('timestamp', timestamp.toString());
   formData.append('api_key', CLOUDINARY_API_KEY);
   formData.append('signature', signature);
+  formData.append('categorization', 'imagga_tagging'); // Story 2.4: AI categorization
   formData.append('eager', 'e_background_removal');
 
   // Upload with timeout (8s to leave buffer for client's 10s timeout)
