@@ -111,7 +111,11 @@ Deno.test('mapCloudinaryTagsToCategory - maps all category types correctly', () 
     const tags: ImaggaTag[] = [{ tag, confidence: 0.9 }];
     const result = mapCloudinaryTagsToCategory(tags);
     assertExists(result, `Expected result for tag: ${tag}`);
-    assertEquals(result.category, expectedCategory, `Tag "${tag}" should map to "${expectedCategory}"`);
+    assertEquals(
+      result.category,
+      expectedCategory,
+      `Tag "${tag}" should map to "${expectedCategory}"`
+    );
   }
 });
 
@@ -125,7 +129,9 @@ Deno.test('CATEGORY_TAG_MAPPING - all categories have at least one tag', () => {
 
   for (const category of categories) {
     assertEquals(
-      mappedCategories.has(category as 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire'),
+      mappedCategories.has(
+        category as 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire'
+      ),
       true,
       `Category "${category}" should have at least one tag mapping`
     );

@@ -113,9 +113,7 @@ export const CATEGORY_TAG_MAPPING: Record<string, ClothingCategory> = {
  * // result: { category: 'haut', confidence: 95 }
  * ```
  */
-export function mapCloudinaryTagsToCategory(
-  tags: ImaggaTag[]
-): CategoryMappingResult | null {
+export function mapCloudinaryTagsToCategory(tags: ImaggaTag[]): CategoryMappingResult | null {
   if (!tags?.length) return null;
 
   // Sort by confidence descending
