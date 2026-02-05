@@ -16,6 +16,10 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+import {
+  mapCloudinaryTagsToCategory,
+  type ClothingCategory,
+} from '../_shared/categoryMapping.ts';
 
 // =============================================================================
 // Constants
@@ -33,75 +37,6 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/heic', 'image/heif
 /** Rate limiting: max uploads per profile per minute */
 const RATE_LIMIT_MAX_UPLOADS = 10;
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-
-// =============================================================================
-// Clothing Categories (Story 2.4)
-// =============================================================================
-
-/** The 6 supported clothing categories */
-type ClothingCategory = 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire';
-
-/** Mapping from Cloudinary Imagga tags to our categories */
-const CATEGORY_TAG_MAPPING: Record<string, ClothingCategory> = {
-  // Hauts
-  shirt: 'haut',
-  't-shirt': 'haut',
-  tshirt: 'haut',
-  blouse: 'haut',
-  sweater: 'haut',
-  pullover: 'haut',
-  hoodie: 'haut',
-  top: 'haut',
-  polo: 'haut',
-  'tank top': 'haut',
-  cardigan: 'haut',
-
-  // Bas
-  pants: 'bas',
-  trousers: 'bas',
-  jeans: 'bas',
-  shorts: 'bas',
-  skirt: 'bas',
-  leggings: 'bas',
-
-  // Robes
-  dress: 'robe',
-  gown: 'robe',
-  jumpsuit: 'robe',
-  romper: 'robe',
-
-  // Vestes
-  jacket: 'veste',
-  coat: 'veste',
-  blazer: 'veste',
-  vest: 'veste',
-  parka: 'veste',
-  windbreaker: 'veste',
-
-  // Chaussures
-  shoes: 'chaussures',
-  sneakers: 'chaussures',
-  boots: 'chaussures',
-  sandals: 'chaussures',
-  heels: 'chaussures',
-  loafers: 'chaussures',
-  slippers: 'chaussures',
-
-  // Accessoires
-  hat: 'accessoire',
-  cap: 'accessoire',
-  scarf: 'accessoire',
-  belt: 'accessoire',
-  bag: 'accessoire',
-  handbag: 'accessoire',
-  backpack: 'accessoire',
-  watch: 'accessoire',
-  jewelry: 'accessoire',
-  glasses: 'accessoire',
-  sunglasses: 'accessoire',
-  tie: 'accessoire',
-  gloves: 'accessoire',
-};
 
 /** User-facing error messages (sanitized) */
 const ERROR_MESSAGES = {
@@ -195,37 +130,6 @@ function isValidMimeType(mimeType: string): boolean {
  */
 function sanitizeUUID(uuid: string): string {
   return uuid.replace(/[^a-f0-9-]/gi, '');
-}
-
-// =============================================================================
-// Category Mapping (Story 2.4)
-// =============================================================================
-
-/**
- * Maps Cloudinary Imagga tags to our 6 clothing categories
- * Returns the category with highest confidence, or null if no match
- * @param tags - Array of tags with confidence (0.0-1.0 scale from Cloudinary)
- * @returns Category and confidence (0-100 scale) or null
- */
-function mapCloudinaryTagsToCategory(
-  tags: Array<{ tag: string; confidence: number }>
-): { category: ClothingCategory; confidence: number } | null {
-  if (!tags?.length) return null;
-
-  // Sort by confidence descending
-  const sortedTags = [...tags].sort((a, b) => b.confidence - a.confidence);
-
-  // Find first matching tag
-  for (const { tag, confidence } of sortedTags) {
-    const normalizedTag = tag.toLowerCase().trim();
-    const category = CATEGORY_TAG_MAPPING[normalizedTag];
-    if (category) {
-      // Convert from 0.0-1.0 to 0-100 scale
-      return { category, confidence: Math.round(confidence * 100) };
-    }
-  }
-
-  return null;
 }
 
 // =============================================================================
