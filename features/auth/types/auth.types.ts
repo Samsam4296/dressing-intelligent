@@ -11,6 +11,8 @@ export interface AuthState {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** Story 1.14: Error message when session invalidated due to 30-day inactivity (NFR-S9) */
+  inactivityError: string | null;
 }
 
 /** Sign up request payload */

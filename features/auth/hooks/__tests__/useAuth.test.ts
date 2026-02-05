@@ -16,6 +16,9 @@ import { storage, STORAGE_KEYS, storageHelpers } from '@/lib/storage';
 jest.mock('@/lib/supabase');
 jest.mock('@/lib/storage');
 jest.mock('@sentry/react-native');
+jest.mock('@/shared/components/Toast', () => ({
+  showToast: jest.fn(),
+}));
 
 describe('useAuth Hook', () => {
   const mockSession = {
@@ -248,6 +251,161 @@ describe('useAuth Hook', () => {
       unmount();
 
       expect(mockSubscription.unsubscribe).toHaveBeenCalled();
+    });
+  });
+
+  // Story 1.14: Session Persistence - 30-day inactivity (NFR-S9)
+  describe('30-Day Inactivity (Story 1.14 AC#2)', () => {
+    const THIRTY_ONE_DAYS_MS = 31 * 24 * 60 * 60 * 1000;
+    const TWENTY_NINE_DAYS_MS = 29 * 24 * 60 * 60 * 1000;
+
+    it('invalidates session after 30+ days of inactivity', async () => {
+      // GIVEN: LAST_ACTIVITY is 31 days ago, valid session stored
+      const oldActivity = Date.now() - THIRTY_ONE_DAYS_MS;
+
+      // Mock: first call returns LAST_ACTIVITY, second call returns auth state
+      (storageHelpers.getJSON as jest.Mock)
+        .mockImplementationOnce(() => Promise.resolve(oldActivity)) // LAST_ACTIVITY
+        .mockImplementationOnce(() =>
+          Promise.resolve({ session: mockSession, user: mockUser })
+        ); // AUTH_STATE
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      // WHEN: Hook initializes
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: Session is cleared, inactivityError is set
+      expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE);
+      expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.LAST_ACTIVITY);
+      expect(result.current.isAuthenticated).toBe(false);
+      expect(result.current.inactivityError).toBe(
+        "Session expirée après 30 jours d'inactivité"
+      );
+    });
+
+    it('keeps session if activity is less than 30 days ago', async () => {
+      // GIVEN: LAST_ACTIVITY is 29 days ago
+      const recentActivity = Date.now() - TWENTY_NINE_DAYS_MS;
+
+      (storageHelpers.getJSON as jest.Mock).mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.LAST_ACTIVITY) {
+          return Promise.resolve(recentActivity);
+        }
+        if (key === STORAGE_KEYS.AUTH_STATE) {
+          return Promise.resolve({ session: mockSession, user: mockUser });
+        }
+        return Promise.resolve(null);
+      });
+
+      (supabase.auth.setSession as jest.Mock).mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      // WHEN: Hook initializes
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: Session is restored normally
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.inactivityError).toBeNull();
+    });
+
+    it('does not invalidate if no LAST_ACTIVITY stored (first use)', async () => {
+      // GIVEN: No LAST_ACTIVITY stored, valid session
+      (storageHelpers.getJSON as jest.Mock).mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.LAST_ACTIVITY) {
+          return Promise.resolve(null);
+        }
+        if (key === STORAGE_KEYS.AUTH_STATE) {
+          return Promise.resolve({ session: mockSession, user: mockUser });
+        }
+        return Promise.resolve(null);
+      });
+
+      (supabase.auth.setSession as jest.Mock).mockResolvedValue({
+        data: { session: mockSession, user: mockUser },
+        error: null,
+      });
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: Session is restored normally
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.inactivityError).toBeNull();
+    });
+  });
+
+  // Story 1.14: Corrupted Storage (AC#4)
+  describe('Corrupted Storage (Story 1.14 AC#4)', () => {
+    it('handles corrupted storage gracefully', async () => {
+      // GIVEN: storageHelpers throws an error
+      (storageHelpers.getJSON as jest.Mock).mockRejectedValue(
+        new Error('Storage corruption')
+      );
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: No crash, storage is cleaned, user redirected to login
+      expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE);
+      expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.LAST_ACTIVITY);
+      expect(result.current.isAuthenticated).toBe(false);
+    });
+  });
+
+  // Story 1.14: Network Error / Offline Mode (AC#5)
+  describe('Offline Mode (Story 1.14 AC#5)', () => {
+    it('uses local session when network error occurs', async () => {
+      const { showToast } = require('@/shared/components/Toast');
+
+      // GIVEN: Valid session stored, but network error on setSession
+      (storageHelpers.getJSON as jest.Mock).mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.LAST_ACTIVITY) {
+          return Promise.resolve(null);
+        }
+        if (key === STORAGE_KEYS.AUTH_STATE) {
+          return Promise.resolve({ session: mockSession, user: mockUser });
+        }
+        return Promise.resolve(null);
+      });
+
+      (supabase.auth.setSession as jest.Mock).mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'Network request failed' },
+      });
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: Local session is used, offline toast shown
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.session).toEqual(mockSession);
+      expect(showToast).toHaveBeenCalledWith({
+        type: 'info',
+        message: 'Mode hors-ligne',
+      });
     });
   });
 });

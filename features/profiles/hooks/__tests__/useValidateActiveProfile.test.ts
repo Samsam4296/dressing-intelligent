@@ -32,10 +32,16 @@ jest.mock('@/lib/logger', () => ({
   },
 }));
 
+// Story 1.14 AC#3: Mock Toast for profile deleted notification
+jest.mock('@/shared/components/Toast', () => ({
+  showToast: jest.fn(),
+}));
+
 // Import after mocks
 import { useValidateActiveProfile } from '../useValidateActiveProfile';
 import { useProfiles } from '../useProfiles';
 import { logger } from '@/lib/logger';
+import { showToast } from '@/shared/components/Toast';
 
 describe('useValidateActiveProfile', () => {
   const mockProfiles = [
@@ -130,6 +136,25 @@ describe('useValidateActiveProfile', () => {
             }),
           })
         );
+      });
+    });
+
+    // Story 1.14 AC#3: Toast notification when profile deleted on another device
+    it('shows warning Toast when profile was deleted', async () => {
+      (useProfiles as jest.Mock).mockReturnValue({
+        data: mockProfiles,
+        isSuccess: true,
+        isLoading: false,
+      });
+      mockCurrentProfileId.mockReturnValue('deleted-profile-id');
+
+      renderHook(() => useValidateActiveProfile());
+
+      await waitFor(() => {
+        expect(showToast).toHaveBeenCalledWith({
+          type: 'warning',
+          message: 'Votre profil a été modifié. Veuillez en sélectionner un.',
+        });
       });
     });
   });

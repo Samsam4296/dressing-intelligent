@@ -65,6 +65,7 @@ export const STORAGE_KEYS = {
   WARDROBE_CACHE: 'wardrobe-cache',
   RECOMMENDATIONS_CACHE: 'recommendations-cache',
   LAST_SYNC: 'last-sync',
+  LAST_ACTIVITY: 'last-activity', // Story 1.14: NFR-S9 inactivity tracking
 } as const;
 
 // Helper functions for typed storage access
@@ -101,4 +102,14 @@ export const storageHelpers = {
     const keys = await AsyncStorage.getAllKeys();
     return keys ? [...keys] : [];
   },
+};
+
+/**
+ * Update last activity timestamp for inactivity tracking
+ * Story 1.14: NFR-S9 - Session invalidated after 30 days of inactivity
+ *
+ * @returns Promise that resolves when timestamp is stored
+ */
+export const updateLastActivity = async (): Promise<void> => {
+  await storageHelpers.setJSON(STORAGE_KEYS.LAST_ACTIVITY, Date.now());
 };

@@ -12,6 +12,7 @@ import { useEffect, useRef } from 'react';
 import { useProfiles, useSwitchProfile } from './useProfiles';
 import { useCurrentProfileId } from '../stores/useProfileStore';
 import { logger } from '@/lib/logger';
+import { showToast } from '@/shared/components/Toast';
 
 // ============================================
 // Hook
@@ -95,6 +96,12 @@ export const useValidateActiveProfile = () => {
             deletedProfileId: currentProfileId,
             newProfileId: firstProfile.id,
           },
+        });
+
+        // Story 1.14 AC#3: Show Toast when profile was deleted on another device
+        showToast({
+          type: 'warning',
+          message: 'Votre profil a été modifié. Veuillez en sélectionner un.',
         });
 
         switchProfile(firstProfile.id);

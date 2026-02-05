@@ -51,7 +51,7 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 jest.unmock('@/lib/storage');
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS, zustandStorage, storageHelpers } from '@/lib/storage';
+import { STORAGE_KEYS, zustandStorage, storageHelpers, updateLastActivity } from '@/lib/storage';
 
 describe('Storage', () => {
   beforeEach(async () => {
@@ -74,12 +74,17 @@ describe('Storage', () => {
       expect(STORAGE_KEYS.LAST_SYNC).toBe('last-sync');
     });
 
+    // Story 1.14: NFR-S9 - LAST_ACTIVITY key for inactivity tracking
+    it('[P1] defines LAST_ACTIVITY key for inactivity tracking', () => {
+      expect(STORAGE_KEYS.LAST_ACTIVITY).toBe('last-activity');
+    });
+
     it('[P1] keys are readonly (as const)', () => {
       // GIVEN: Storage keys constant
       // WHEN: Checking type
       // THEN: Type is string literal (via TypeScript, runtime check for existence)
       expect(typeof STORAGE_KEYS.AUTH_STATE).toBe('string');
-      expect(Object.keys(STORAGE_KEYS).length).toBe(6);
+      expect(Object.keys(STORAGE_KEYS).length).toBe(7); // Story 1.14: Added LAST_ACTIVITY
     });
   });
 
@@ -238,6 +243,36 @@ describe('Storage', () => {
       // THEN: All keys are returned
       expect(keys).toContain('alpha');
       expect(keys).toContain('beta');
+    });
+  });
+
+  // Story 1.14: Session Persistence - Activity Tracking (AC#6)
+  describe('updateLastActivity', () => {
+    it('[P1] stores current timestamp', async () => {
+      // GIVEN: Empty storage
+      const beforeTime = Date.now();
+
+      // WHEN: Updating last activity
+      await updateLastActivity();
+
+      // THEN: Timestamp is stored in LAST_ACTIVITY key
+      const stored = await storageHelpers.getJSON<number>(STORAGE_KEYS.LAST_ACTIVITY);
+      expect(stored).toBeDefined();
+      expect(stored).toBeGreaterThanOrEqual(beforeTime);
+      expect(stored).toBeLessThanOrEqual(Date.now());
+    });
+
+    it('[P1] overwrites previous timestamp', async () => {
+      // GIVEN: An old timestamp stored
+      const oldTime = Date.now() - 1000;
+      await storageHelpers.setJSON(STORAGE_KEYS.LAST_ACTIVITY, oldTime);
+
+      // WHEN: Updating last activity
+      await updateLastActivity();
+
+      // THEN: New timestamp replaces old
+      const stored = await storageHelpers.getJSON<number>(STORAGE_KEYS.LAST_ACTIVITY);
+      expect(stored).toBeGreaterThan(oldTime);
     });
   });
 });
