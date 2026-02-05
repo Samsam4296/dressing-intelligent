@@ -12,7 +12,7 @@
  * NFR-P1: Animations run at 60fps using Reanimated
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -38,21 +38,16 @@ type ScreenState = 'picking' | 'validating' | 'error';
  */
 export const GalleryPickerScreen = () => {
   const [state, setState] = useState<ScreenState>('picking');
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const initPicker = async () => {
-      if (isMounted) {
-        await handlePickImage(isMounted);
-      }
-    };
+    isMountedRef.current = true;
 
     // Launch picker immediately on mount (AC#1)
-    initPicker();
+    handlePickImage();
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally run only on mount
   }, []);
@@ -60,16 +55,16 @@ export const GalleryPickerScreen = () => {
   /**
    * Handle image selection from gallery
    * Validates format and size, navigates on success
-   * @param isMounted - Flag to prevent state updates on unmounted component
+   * Uses isMountedRef to prevent state updates on unmounted component
    */
-  const handlePickImage = async (isMounted = true) => {
-    if (!isMounted) return;
+  const handlePickImage = async () => {
+    if (!isMountedRef.current) return;
     setState('picking');
 
     const { data, error } = await galleryService.pickImage();
 
     // Prevent state updates if component unmounted during async operation
-    if (!isMounted) return;
+    if (!isMountedRef.current) return;
 
     if (error) {
       // Use type guard for proper type checking
@@ -87,20 +82,29 @@ export const GalleryPickerScreen = () => {
         // Recoverable errors: re-open picker for new selection
         if (error.code === 'file_too_large' || error.code === 'invalid_format') {
           // Small delay before reopening picker for better UX
-          setTimeout(() => handlePickImage(isMounted), 500);
+          setTimeout(() => {
+            if (isMountedRef.current) {
+              handlePickImage();
+            }
+          }, 500);
           return;
         }
       }
 
       // Critical error: log and return after delay
+      if (!isMountedRef.current) return;
       setState('error');
       captureError(error, 'wardrobe', 'GalleryPickerScreen.handlePickImage');
 
-      setTimeout(() => router.back(), 1500);
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          router.back();
+        }
+      }, 1500);
       return;
     }
 
-    if (data) {
+    if (data && isMountedRef.current) {
       setState('validating');
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 

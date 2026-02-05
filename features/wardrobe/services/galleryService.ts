@@ -64,11 +64,25 @@ export class GalleryError extends Error {
   }
 }
 
+/** Valid gallery error codes for type guard validation */
+const GALLERY_ERROR_CODES: readonly GalleryErrorCode[] = [
+  'cancelled',
+  'file_too_large',
+  'invalid_format',
+  'picker_error',
+];
+
 /**
  * Type guard to check if an error is a GalleryError
+ * Validates both instance type and error code validity
  */
 export const isGalleryError = (error: Error): error is GalleryError => {
-  return error instanceof GalleryError || 'code' in error;
+  if (error instanceof GalleryError) return true;
+  // Fallback check for serialized errors: validate code is a valid GalleryErrorCode
+  if ('code' in error && typeof (error as GalleryError).code === 'string') {
+    return GALLERY_ERROR_CODES.includes((error as GalleryError).code);
+  }
+  return false;
 };
 
 // ============================================
@@ -177,13 +191,16 @@ export const galleryService = {
   /**
    * Extracts file extension from filename or URI
    * Returns empty string if no valid extension found
+   * Handles query params in URIs (e.g., file:///image.jpg?token=abc)
    */
   getFileExtension(fileNameOrUri: string): string {
-    const lastDotIndex = fileNameOrUri.lastIndexOf('.');
-    if (lastDotIndex === -1 || lastDotIndex === fileNameOrUri.length - 1) {
+    // Remove query params and hash fragments for URI parsing
+    const cleanPath = fileNameOrUri.split('?')[0].split('#')[0];
+    const lastDotIndex = cleanPath.lastIndexOf('.');
+    if (lastDotIndex === -1 || lastDotIndex === cleanPath.length - 1) {
       return ''; // No valid extension found
     }
-    return fileNameOrUri.slice(lastDotIndex + 1).toLowerCase();
+    return cleanPath.slice(lastDotIndex + 1).toLowerCase();
   },
 
   /**

@@ -172,6 +172,20 @@ describe('galleryService', () => {
     it('handles uppercase extensions', () => {
       expect(galleryService.getFileExtension('PHOTO.JPG')).toBe('jpg');
     });
+
+    it('handles URI with query params', () => {
+      expect(galleryService.getFileExtension('file:///image.jpg?token=abc123')).toBe('jpg');
+      expect(galleryService.getFileExtension('https://cdn.example.com/photo.png?size=large&v=2')).toBe('png');
+    });
+
+    it('handles URI with hash fragment', () => {
+      expect(galleryService.getFileExtension('file:///image.webp#section')).toBe('webp');
+    });
+
+    it('returns empty string for missing extension', () => {
+      expect(galleryService.getFileExtension('noextension')).toBe('');
+      expect(galleryService.getFileExtension('file.')).toBe('');
+    });
   });
 
   // ============================================
