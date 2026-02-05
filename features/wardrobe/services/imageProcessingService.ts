@@ -16,7 +16,6 @@
  */
 
 import * as FileSystem from 'expo-file-system';
-import { EncodingType } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase } from '@/lib/supabase';
 import { captureError } from '@/lib/logger';
@@ -379,7 +378,7 @@ export const imageProcessingService = {
    */
   async uriToBase64(uri: string): Promise<string> {
     const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: EncodingType.Base64,
+      encoding: 'base64',
     });
     return base64;
   },

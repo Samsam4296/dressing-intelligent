@@ -13,14 +13,21 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CategorySelector } from '../components/CategorySelector';
 import { categoryService } from '../services/categoryService';
-import type { ClothingCategory, CategorySelectionParams } from '../types/wardrobe.types';
+import type { ClothingCategory } from '../types/wardrobe.types';
 
 // ============================================
 // Component
 // ============================================
 
 export const CategorizeScreen = () => {
-  const params = useLocalSearchParams<CategorySelectionParams>();
+  const params = useLocalSearchParams<{
+    originalUrl?: string;
+    processedUrl?: string;
+    publicId?: string;
+    usedFallback?: string;
+    suggestedCategory?: string;
+    categoryConfidence?: string;
+  }>();
   const {
     originalUrl,
     processedUrl,
