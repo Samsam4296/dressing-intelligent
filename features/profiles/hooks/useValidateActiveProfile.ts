@@ -101,7 +101,7 @@ export const useValidateActiveProfile = () => {
         // Story 1.14 AC#3: Show Toast when profile was deleted on another device
         showToast({
           type: 'warning',
-          message: 'Votre profil a été modifié. Veuillez en sélectionner un.',
+          message: 'Votre profil a été supprimé. Veuillez en sélectionner un autre.',
         });
 
         switchProfile(firstProfile.id);

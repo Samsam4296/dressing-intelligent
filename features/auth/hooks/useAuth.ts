@@ -53,10 +53,19 @@ const isNetworkError = (error: unknown): boolean => {
  */
 const isSessionUsable = (session: Session | null): boolean => {
   if (!session) return false;
-  // Check if the session has a refresh token (basic validity check)
-  // The actual token validation happens server-side, but we can use the
-  // session locally if we're offline and it exists
-  return !!session.refresh_token && !!session.access_token;
+
+  // Must have both tokens
+  if (!session.refresh_token || !session.access_token) return false;
+
+  // Check if session has expired (expires_at is in seconds since epoch)
+  if (session.expires_at) {
+    const expiresAtMs = session.expires_at * 1000;
+    if (Date.now() > expiresAtMs) {
+      return false; // Session has expired
+    }
+  }
+
+  return true;
 };
 
 interface StoredAuthState {
@@ -119,6 +128,7 @@ export const useAuth = (): AuthState => {
               category: 'auth',
               message: `Session invalidated: ${daysSinceActivity} days inactive (NFR-S9)`,
               level: 'warning',
+              data: { daysSinceActivity, limit: INACTIVITY_DAYS_LIMIT },
             });
 
             if (isMounted) {

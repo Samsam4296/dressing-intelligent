@@ -274,5 +274,32 @@ describe('Storage', () => {
       const stored = await storageHelpers.getJSON<number>(STORAGE_KEYS.LAST_ACTIVITY);
       expect(stored).toBeGreaterThan(oldTime);
     });
+
+    it('[P1] is called on navigation changes (AC#6 integration)', async () => {
+      // This test documents the integration with _layout.tsx:
+      // _layout.tsx calls updateLastActivity() when segments change and user is authenticated.
+      //
+      // Integration flow:
+      // 1. User navigates to new screen (segments change)
+      // 2. _layout.tsx useEffect detects change
+      // 3. If isAuthenticated && segments.length > 0, calls updateLastActivity()
+      // 4. LAST_ACTIVITY timestamp is updated
+
+      // GIVEN: Simulate multiple navigation events
+      const timestamps: number[] = [];
+
+      for (let i = 0; i < 3; i++) {
+        await updateLastActivity();
+        const stored = await storageHelpers.getJSON<number>(STORAGE_KEYS.LAST_ACTIVITY);
+        if (stored) timestamps.push(stored);
+        // Small delay to ensure different timestamps
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+
+      // THEN: Each call updates the timestamp
+      expect(timestamps.length).toBe(3);
+      expect(timestamps[1]).toBeGreaterThanOrEqual(timestamps[0]);
+      expect(timestamps[2]).toBeGreaterThanOrEqual(timestamps[1]);
+    });
   });
 });

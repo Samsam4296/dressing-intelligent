@@ -153,7 +153,7 @@ describe('useValidateActiveProfile', () => {
       await waitFor(() => {
         expect(showToast).toHaveBeenCalledWith({
           type: 'warning',
-          message: 'Votre profil a été modifié. Veuillez en sélectionner un.',
+          message: 'Votre profil a été supprimé. Veuillez en sélectionner un autre.',
         });
       });
     });

@@ -5,7 +5,7 @@
  * Tests for session persistence and auth state management.
  *
  * AC#2: JWT generated with 1h expiration (handled by Supabase autoRefreshToken)
- * AC#3: Refresh token stored securely in MMKV (AES-256)
+ * AC#3: Refresh token stored securely in AsyncStorage
  */
 
 import { renderHook, act, waitFor } from '@testing-library/react-native';
@@ -406,6 +406,71 @@ describe('useAuth Hook', () => {
         type: 'info',
         message: 'Mode hors-ligne',
       });
+    });
+
+    it('does not use expired local session when offline', async () => {
+      // GIVEN: Expired session stored, network error on setSession
+      const expiredSession = {
+        ...mockSession,
+        expires_at: Math.floor(Date.now() / 1000) - 3600, // Expired 1 hour ago
+      };
+
+      (storageHelpers.getJSON as jest.Mock).mockImplementation((key: string) => {
+        if (key === STORAGE_KEYS.LAST_ACTIVITY) {
+          return Promise.resolve(null);
+        }
+        if (key === STORAGE_KEYS.AUTH_STATE) {
+          return Promise.resolve({ session: expiredSession, user: mockUser });
+        }
+        return Promise.resolve(null);
+      });
+
+      (supabase.auth.setSession as jest.Mock).mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'Network request failed' },
+      });
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: Expired session is NOT used, user is not authenticated
+      expect(result.current.isAuthenticated).toBe(false);
+      expect(storage.delete).toHaveBeenCalledWith(STORAGE_KEYS.AUTH_STATE);
+    });
+  });
+
+  // Story 1.14: Integration behavior documentation
+  describe('InactivityError Toast Integration (Story 1.14 AC#2)', () => {
+    it('sets inactivityError for _layout.tsx to display Toast', async () => {
+      // This test verifies inactivityError is set correctly.
+      // The actual Toast display is handled by _layout.tsx useEffect:
+      //   useEffect(() => {
+      //     if (inactivityError) showToast({ type: 'error', message: inactivityError });
+      //   }, [inactivityError]);
+
+      const THIRTY_ONE_DAYS_MS = 31 * 24 * 60 * 60 * 1000;
+      const oldActivity = Date.now() - THIRTY_ONE_DAYS_MS;
+
+      (storageHelpers.getJSON as jest.Mock).mockImplementationOnce(() =>
+        Promise.resolve(oldActivity)
+      );
+
+      const { useAuth } = require('../useAuth');
+      const { result } = renderHook(() => useAuth());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // THEN: inactivityError is set for Toast display in _layout.tsx
+      expect(result.current.inactivityError).toBe(
+        "Session expirée après 30 jours d'inactivité"
+      );
+      // Note: showToast is called by _layout.tsx, not useAuth
     });
   });
 });

@@ -7,6 +7,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { StateStorage } from 'zustand/middleware';
+import * as Sentry from '@sentry/react-native';
 
 /**
  * Unified storage interface using AsyncStorage
@@ -19,11 +20,15 @@ export const storage = {
   },
 
   set: (key: string, value: string): void => {
-    AsyncStorage.setItem(key, value).catch(console.error);
+    AsyncStorage.setItem(key, value).catch((err) => {
+      Sentry.captureException(err, { tags: { feature: 'storage', action: 'set', key } });
+    });
   },
 
   delete: (key: string): void => {
-    AsyncStorage.removeItem(key).catch(console.error);
+    AsyncStorage.removeItem(key).catch((err) => {
+      Sentry.captureException(err, { tags: { feature: 'storage', action: 'delete', key } });
+    });
   },
 
   contains: (_key: string): boolean => {
@@ -32,7 +37,9 @@ export const storage = {
   },
 
   clearAll: (): void => {
-    AsyncStorage.clear().catch(console.error);
+    AsyncStorage.clear().catch((err) => {
+      Sentry.captureException(err, { tags: { feature: 'storage', action: 'clearAll' } });
+    });
   },
 
   getAllKeys: (): string[] => {

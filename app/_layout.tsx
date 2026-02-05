@@ -28,7 +28,7 @@ export default function Layout() {
   const router = useRouter();
   const segments = useSegments();
   const { isAuthenticated, isLoading, inactivityError } = useAuth();
-  const lastSegmentsRef = useRef<string[]>([]);
+  const lastSegmentsRef = useRef<string[] | null>(null);
 
   // Story 1.14 AC#3: Validate profile exists after session restore
   useValidateActiveProfile();
@@ -44,9 +44,10 @@ export default function Layout() {
   useEffect(() => {
     if (!isAuthenticated || segments.length === 0) return;
 
-    // Only update on actual navigation (segments changed)
+    // Check if segments changed (null means first render - always track)
+    const isFirstRender = lastSegmentsRef.current === null;
     const segmentsChanged =
-      JSON.stringify(segments) !== JSON.stringify(lastSegmentsRef.current);
+      isFirstRender || JSON.stringify(segments) !== JSON.stringify(lastSegmentsRef.current);
 
     if (segmentsChanged) {
       lastSegmentsRef.current = [...segments];
