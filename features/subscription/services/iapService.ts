@@ -173,18 +173,31 @@ export const iapService = {
         };
       }
 
-      const products: IAPProduct[] = subscriptions.map((sub: IAPSubscription) => ({
-        productId: sub.productId,
-        localizedPrice: sub.localizedPrice || '',
-        price: sub.price || '',
-        currency: sub.currency || '',
-        title: sub.title || '',
-        description: sub.description || '',
-        introductoryPrice: sub.introductoryPrice || undefined,
-        subscriptionPeriod:
-          sub.subscriptionPeriodUnitIOS || sub.subscriptionPeriodAndroid || undefined,
-        freeTrialPeriod: sub.introductoryPricePeriodIOS || sub.freeTrialPeriodAndroid || undefined,
-      }));
+      // Note: react-native-iap v12+ has different type definitions than runtime values
+      // Using type assertion as actual structure depends on iOS/Android store responses
+      // This code requires Apple/Google developer accounts to test properly
+      const products: IAPProduct[] = subscriptions.map((sub) => {
+        // Cast to any to access platform-specific properties that may exist at runtime
+        const subscription = sub as IAPSubscription & Record<string, unknown>;
+
+        return {
+          productId: subscription.productId,
+          localizedPrice: (subscription.localizedPrice as string) || '',
+          price: (subscription.price as string) || '',
+          currency: (subscription.currency as string) || '',
+          title: subscription.title || '',
+          description: subscription.description || '',
+          introductoryPrice: (subscription.introductoryPrice as string) || undefined,
+          subscriptionPeriod:
+            (subscription.subscriptionPeriodUnitIOS as string) ||
+            (subscription.subscriptionPeriodAndroid as string) ||
+            undefined,
+          freeTrialPeriod:
+            (subscription.introductoryPricePeriodIOS as string) ||
+            (subscription.freeTrialPeriodAndroid as string) ||
+            undefined,
+        };
+      });
 
       Sentry.addBreadcrumb({
         category: 'iap',

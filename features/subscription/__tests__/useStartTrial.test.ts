@@ -22,7 +22,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
 import { useStartTrial } from '../hooks/useStartTrial';
-import { showToast } from '@/shared/components/Toast';
+// showToast is mocked below - import not needed
 
 // ============================================
 // Mocks
