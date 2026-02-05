@@ -146,9 +146,13 @@ function logError(context: string, error: unknown, metadata?: Record<string, unk
 serve(async (req: Request): Promise<Response> => {
   // CORS headers - use environment variable for production security
   // Set ALLOWED_ORIGIN in Supabase secrets for production deployment
-  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
+  // WARNING: Falls back to '*' only for development. Set ALLOWED_ORIGIN in production!
+  const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN');
+  if (!allowedOrigin) {
+    console.warn('[SECURITY] ALLOWED_ORIGIN not set - using wildcard. Set this in production!');
+  }
   const corsHeaders = {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': allowedOrigin || '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
 
@@ -229,52 +233,72 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ===========================================
-    // 5. Rate limiting check
+    // 5. Rate limiting check (graceful if table doesn't exist yet)
     // ===========================================
-    const rateLimitCutoff = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
-    const { count: recentUploads } = await supabase
-      .from('clothing_items')
-      .select('*', { count: 'exact', head: true })
-      .eq('profile_id', profileId)
-      .gte('created_at', rateLimitCutoff);
+    // Note: clothing_items table created in Story 2.7. Until then, rate limiting is skipped.
+    try {
+      const rateLimitCutoff = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+      const { count: recentUploads, error: rateLimitError } = await supabase
+        .from('clothing_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('profile_id', profileId)
+        .gte('created_at', rateLimitCutoff);
 
-    if (recentUploads !== null && recentUploads >= RATE_LIMIT_MAX_UPLOADS) {
-      logError('rate_limit', new Error('Rate limit exceeded'), { profileId, recentUploads });
-      throw new ClientError(ERROR_MESSAGES.RATE_LIMITED, 429);
+      if (rateLimitError) {
+        // Table doesn't exist yet - skip rate limiting (will work after Story 2.7)
+        logError('rate_limit_skip', rateLimitError, { reason: 'table_not_ready' });
+      } else if (recentUploads !== null && recentUploads >= RATE_LIMIT_MAX_UPLOADS) {
+        logError('rate_limit', new Error('Rate limit exceeded'), { profileId, recentUploads });
+        throw new ClientError(ERROR_MESSAGES.RATE_LIMITED, 429);
+      }
+    } catch (error) {
+      // Only re-throw if it's our rate limit error
+      if (error instanceof ClientError) throw error;
+      // Otherwise log and continue (table may not exist)
+      logError('rate_limit_error', error, { reason: 'graceful_skip' });
     }
 
     // ===========================================
-    // 6. Check idempotency (prevent duplicate processing)
+    // 6. Check idempotency (graceful if table doesn't exist yet)
     // ===========================================
+    // Note: clothing_items table created in Story 2.7. Until then, idempotency check is skipped.
     if (idempotencyKey) {
-      const sanitizedUserId = sanitizeUUID(user.id);
-      const sanitizedProfileId = sanitizeUUID(profileId);
-      const expectedPublicId = `clothes/${sanitizedUserId}/${sanitizedProfileId}/${idempotencyKey}`;
+      try {
+        const sanitizedUserId = sanitizeUUID(user.id);
+        const sanitizedProfileId = sanitizeUUID(profileId);
+        const expectedPublicId = `clothes/${sanitizedUserId}/${sanitizedProfileId}/${idempotencyKey}`;
 
-      // Check if this idempotency key was already processed
-      const { data: existingItem } = await supabase
-        .from('clothing_items')
-        .select('cloudinary_public_id, original_image_url, processed_image_url')
-        .eq('cloudinary_public_id', expectedPublicId)
-        .single();
+        // Check if this idempotency key was already processed
+        const { data: existingItem, error: idempotencyError } = await supabase
+          .from('clothing_items')
+          .select('cloudinary_public_id, original_image_url, processed_image_url')
+          .eq('cloudinary_public_id', expectedPublicId)
+          .single();
 
-      if (existingItem) {
-        // Return cached result instead of re-uploading
-        logError('idempotency', new Error('Duplicate request detected'), { idempotencyKey });
-        return new Response(
-          JSON.stringify({
-            success: true,
-            data: {
-              originalUrl: existingItem.original_image_url,
-              processedUrl: existingItem.processed_image_url,
-              publicId: existingItem.cloudinary_public_id,
-            },
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
+        if (idempotencyError && idempotencyError.code !== 'PGRST116') {
+          // PGRST116 = no rows returned (expected). Other errors = table issue
+          logError('idempotency_skip', idempotencyError, { reason: 'table_not_ready' });
+        } else if (existingItem) {
+          // Return cached result instead of re-uploading
+          logError('idempotency', new Error('Duplicate request detected'), { idempotencyKey });
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: {
+                originalUrl: existingItem.original_image_url,
+                processedUrl: existingItem.processed_image_url,
+                publicId: existingItem.cloudinary_public_id,
+              },
+            }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            }
+          );
+        }
+      } catch (error) {
+        // Log and continue (table may not exist)
+        logError('idempotency_error', error, { reason: 'graceful_skip' });
       }
     }
 
