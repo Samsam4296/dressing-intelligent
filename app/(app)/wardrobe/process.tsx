@@ -24,9 +24,7 @@ export default function Process() {
       />
       <View className="flex-1 items-center justify-center bg-gray-900 p-6">
         <Ionicons name="construct-outline" size={64} color="#6B7280" />
-        <Text className="mb-2 mt-4 text-center text-lg text-white">
-          Traitement en cours...
-        </Text>
+        <Text className="mb-2 mt-4 text-center text-lg text-white">Traitement en cours...</Text>
         <Text className="mb-6 text-center text-gray-400">
           Story 2.3 (Détourage automatique) implémentera cette fonctionnalité.
         </Text>
@@ -41,7 +39,7 @@ export default function Process() {
           accessibilityRole="button"
           accessibilityLabel="Retour à l'accueil"
           testID="process-back-button">
-          <Text className="font-semibold text-white">Retour à l'accueil</Text>
+          <Text className="font-semibold text-white">Retour à l&apos;accueil</Text>
         </Pressable>
       </View>
     </>

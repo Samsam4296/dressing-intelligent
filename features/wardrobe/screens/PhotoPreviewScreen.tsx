@@ -72,7 +72,7 @@ export const PhotoPreviewScreen = () => {
       });
     } catch (error) {
       captureError(error, 'wardrobe', 'PhotoPreviewScreen.handleUsePhoto');
-      showToast({ type: 'error', message: 'Erreur lors du traitement de l\'image' });
+      showToast({ type: 'error', message: "Erreur lors du traitement de l'image" });
       setIsProcessing(false);
     }
   };

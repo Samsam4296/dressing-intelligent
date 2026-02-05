@@ -441,7 +441,9 @@ jest.mock('expo-linking', () => ({
 jest.mock('expo-camera', () => ({
   Camera: {
     getCameraPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
-    requestCameraPermissionsAsync: jest.fn().mockResolvedValue({ granted: true, canAskAgain: true }),
+    requestCameraPermissionsAsync: jest
+      .fn()
+      .mockResolvedValue({ granted: true, canAskAgain: true }),
   },
   CameraView: 'CameraView',
   useCameraPermissions: jest.fn(() => [
