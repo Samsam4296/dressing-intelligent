@@ -26,12 +26,5 @@ export { CategorizeScreen } from './screens/CategorizeScreen';
 // Types (Story 2.3 + 2.4)
 export { ProcessingError, isProcessingError } from './types/wardrobe.types';
 export type { ProcessingResult, ProcessingErrorCode } from './types/wardrobe.types';
-export type {
-  ClothingCategory,
-  CategorySelectionParams,
-} from './types/wardrobe.types';
-export {
-  CATEGORY_LABELS,
-  CATEGORY_ICONS,
-  CATEGORY_ORDER,
-} from './types/wardrobe.types';
+export type { ClothingCategory, CategorySelectionParams } from './types/wardrobe.types';
+export { CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_ORDER } from './types/wardrobe.types';

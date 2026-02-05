@@ -6,6 +6,7 @@
  * Supports AI suggestions with visual badge and haptic feedback.
  */
 
+import { memo, useCallback } from 'react';
 import { View, Pressable, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -31,16 +32,19 @@ interface CategorySelectorProps {
 // Component
 // ============================================
 
-export const CategorySelector = ({
+export const CategorySelector = memo(function CategorySelector({
   selectedCategory,
   suggestedCategory,
   showAiBadge = false,
   onSelect,
-}: CategorySelectorProps) => {
-  const handlePress = (category: ClothingCategory) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onSelect(category);
-  };
+}: CategorySelectorProps) {
+  const handlePress = useCallback(
+    (category: ClothingCategory) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onSelect(category);
+    },
+    [onSelect]
+  );
 
   return (
     <View className="flex-row flex-wrap justify-center gap-3 px-4">
@@ -53,6 +57,7 @@ export const CategorySelector = ({
           <Pressable
             key={category}
             onPress={() => handlePress(category)}
+            accessible={true}
             className={`
               min-h-[80px] w-[45%] items-center justify-center rounded-xl border-2 py-4
               ${
@@ -96,4 +101,4 @@ export const CategorySelector = ({
       })}
     </View>
   );
-};
+});

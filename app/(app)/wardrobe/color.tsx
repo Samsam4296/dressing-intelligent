@@ -20,9 +20,7 @@ export default function Color() {
         }}
       />
       <View className="flex-1 items-center justify-center bg-gray-900 dark:bg-black">
-        <Text className="text-white text-lg">
-          Sélection couleur - Story 2.6
-        </Text>
+        <Text className="text-lg text-white">Sélection couleur - Story 2.6</Text>
       </View>
     </>
   );

@@ -30,15 +30,16 @@ export const CATEGORY_LABELS: Record<ClothingCategory, string> = {
 /**
  * Icônes Ionicons pour chaque catégorie
  * Note: Ionicons n'a pas d'icône pantalon parfaite, 'resize-outline' évoque une forme verticale
+ * Type-safe: Uses 'as const satisfies' for compile-time icon validation
  */
-export const CATEGORY_ICONS: Record<ClothingCategory, string> = {
+export const CATEGORY_ICONS = {
   haut: 'shirt-outline',
   bas: 'resize-outline', // Forme verticale (pas d'icône pantalon dans Ionicons)
   robe: 'woman-outline',
   veste: 'layers-outline',
   chaussures: 'footsteps-outline',
   accessoire: 'watch-outline',
-};
+} as const satisfies Record<ClothingCategory, string>;
 
 /**
  * Ordre d'affichage des catégories (grille 2x3)

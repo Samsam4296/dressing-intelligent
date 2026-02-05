@@ -66,9 +66,9 @@ export const CategorizeScreen = () => {
   /**
    * Handle category selection (haptic feedback in CategorySelector)
    */
-  const handleCategorySelect = (category: ClothingCategory) => {
+  const handleCategorySelect = useCallback((category: ClothingCategory) => {
     setSelectedCategory(category);
-  };
+  }, []);
 
   /**
    * Handle confirm - navigate to color selection
@@ -155,7 +155,7 @@ export const CategorizeScreen = () => {
           resizeMode="contain"
           testID="clothing-image"
         />
-        {usedFallback === 'true' && (
+        {usedFallback?.toLowerCase() === 'true' && (
           <Text className="mt-2 text-xs text-yellow-500">⚠️ Détourage non disponible</Text>
         )}
       </View>
@@ -178,7 +178,7 @@ export const CategorizeScreen = () => {
         {/* Confidence indicator */}
         {suggestedCategory && categoryConfidence > 0 && (
           <Text className="mt-4 text-center text-xs text-gray-500">
-            Confiance IA: {Math.round(categoryConfidence)}%
+            Confiance IA: {Math.min(100, Math.round(categoryConfidence))}%
           </Text>
         )}
       </View>
