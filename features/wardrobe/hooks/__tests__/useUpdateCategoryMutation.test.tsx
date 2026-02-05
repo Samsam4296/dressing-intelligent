@@ -154,24 +154,34 @@ describe('useUpdateCategoryMutation', () => {
   });
 
   describe('Loading state', () => {
-    it('returns isPending true while mutation is in progress', async () => {
-      (clothingService.updateCategory as jest.Mock).mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => resolve({ data: { id: '123', category: 'bas' }, error: null }), 100)
-          )
+    it('transitions through pending state during mutation', async () => {
+      let resolvePromise: (value: { data: { id: string; category: string }; error: null }) => void;
+      const pendingPromise = new Promise<{ data: { id: string; category: string }; error: null }>(
+        (resolve) => {
+          resolvePromise = resolve;
+        }
       );
+
+      (clothingService.updateCategory as jest.Mock).mockReturnValue(pendingPromise);
 
       const { result } = renderHook(() => useUpdateCategoryMutation(), {
         wrapper: createWrapper(),
       });
 
+      // Start mutation
       act(() => {
         result.current.mutate({ clothingId: '123', category: 'bas' });
       });
 
-      expect(result.current.isPending).toBe(true);
+      // Verify pending state (mutation is blocked waiting for our promise)
+      await waitFor(() => expect(result.current.isPending).toBe(true));
 
+      // Resolve the promise
+      act(() => {
+        resolvePromise!({ data: { id: '123', category: 'bas' }, error: null });
+      });
+
+      // Verify completion
       await waitFor(() => expect(result.current.isPending).toBe(false));
     });
   });
