@@ -11,17 +11,18 @@ import { View, Text, Image, Pressable, Alert, BackHandler, ScrollView } from 're
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from '@sentry/react-native';
 import { ColorSelector } from '../components/ColorSelector';
 import { categoryService } from '../services/categoryService';
-import { CATEGORY_LABELS, CATEGORY_ICONS, type ClothingColor } from '../types/wardrobe.types';
+import {
+  CATEGORY_LABELS,
+  CATEGORY_ICONS,
+  type ClothingColor,
+  type ColorSelectionParams,
+} from '../types/wardrobe.types';
 
 export const ColorSelectionScreen = () => {
-  const params = useLocalSearchParams<{
-    originalUrl: string;
-    processedUrl: string;
-    publicId: string;
-    category: string;
-  }>();
+  const params = useLocalSearchParams() as unknown as ColorSelectionParams;
   const { originalUrl, processedUrl, publicId, category: categoryParam } = params;
 
   const category = categoryService.parseCategory(categoryParam);
@@ -75,6 +76,14 @@ export const ColorSelectionScreen = () => {
 
   // Error state - missing required params
   if (!originalUrl || !publicId || !category) {
+    Sentry.captureMessage('ColorSelectionScreen: missing required params', {
+      level: 'warning',
+      extra: {
+        hasOriginalUrl: !!originalUrl,
+        hasPublicId: !!publicId,
+        hasCategory: !!category,
+      },
+    });
     return (
       <View className="flex-1 items-center justify-center bg-gray-900 p-6">
         <Ionicons name="alert-circle" size={64} color="#EF4444" />

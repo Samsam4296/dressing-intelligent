@@ -21,6 +21,9 @@ interface ColorSelectorProps {
 /** Light colors that need a distinct selection border */
 const LIGHT_COLORS = new Set<ClothingColor>(['blanc', 'beige']);
 
+/** Stable style for 5-column grid items (avoids re-creating objects per render) */
+const ITEM_STYLE = { width: '20%' } as const;
+
 /**
  * Renders the multicolor circle as 4 colored quadrants.
  * Avoids dependency on expo-linear-gradient.
@@ -66,7 +69,7 @@ export const ColorSelector = memo(function ColorSelector({
             onPress={() => handlePress(color)}
             accessible={true}
             className="items-center"
-            style={{ width: '20%' }}
+            style={ITEM_STYLE}
             accessibilityRole="button"
             accessibilityLabel={`Couleur ${COLOR_LABELS[color]}`}
             accessibilityState={{ selected: isSelected }}
@@ -79,7 +82,10 @@ export const ColorSelector = memo(function ColorSelector({
               {isMulticolor ? (
                 <MulticolorCircle />
               ) : (
-                <View className="h-9 w-9 rounded-full" style={{ backgroundColor: hexColor }} />
+                <View
+                  className="h-9 w-9 rounded-full"
+                  style={hexColor ? { backgroundColor: hexColor } : undefined}
+                />
               )}
 
               {/* Selected checkmark overlay */}

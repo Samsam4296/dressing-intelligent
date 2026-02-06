@@ -101,8 +101,9 @@ export const COLOR_LABELS: Record<ClothingColor, string> = {
  * Hex codes for color circle rendering
  * Adjusted for visibility on dark backgrounds
  * noir: #374151 (gray-700) for contrast on bg-gray-900
+ * multicolore: null (rendered as quadrant pattern, not a single hex)
  */
-export const COLOR_HEX: Record<ClothingColor, string> = {
+export const COLOR_HEX: Record<ClothingColor, string | null> = {
   noir: '#374151',
   blanc: '#F9FAFB',
   gris: '#9CA3AF',
@@ -116,7 +117,7 @@ export const COLOR_HEX: Record<ClothingColor, string> = {
   violet: '#8B5CF6',
   marron: '#92400E',
   beige: '#D4B896',
-  multicolore: 'multicolor',
+  multicolore: null,
 };
 
 /**

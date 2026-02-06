@@ -39,5 +39,5 @@ export { ProcessingError, isProcessingError } from './types/wardrobe.types';
 export type { ProcessingResult, ProcessingErrorCode } from './types/wardrobe.types';
 export type { ClothingCategory, CategorySelectionParams } from './types/wardrobe.types';
 export { CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_ORDER } from './types/wardrobe.types';
-export type { ClothingColor } from './types/wardrobe.types';
+export type { ClothingColor, ColorSelectionParams } from './types/wardrobe.types';
 export { COLOR_LABELS, COLOR_HEX, COLOR_ORDER } from './types/wardrobe.types';

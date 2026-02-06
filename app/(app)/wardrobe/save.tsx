@@ -17,15 +17,24 @@ import {
   type ClothingCategory,
   type ClothingColor,
 } from '@/features/wardrobe/types/wardrobe.types';
+import { categoryService } from '@/features/wardrobe/services/categoryService';
 
 export default function Save() {
-  const { originalUrl, processedUrl, category, color } = useLocalSearchParams<{
+  const {
+    originalUrl,
+    processedUrl,
+    category: categoryParam,
+    color: colorParam,
+  } = useLocalSearchParams<{
     originalUrl: string;
     processedUrl: string;
     publicId: string;
-    category: ClothingCategory;
-    color: ClothingColor;
+    category: string;
+    color: string;
   }>();
+
+  const category = categoryService.parseCategory(categoryParam) as ClothingCategory | null;
+  const color = (colorParam as ClothingColor) || null;
 
   const imageUrl = processedUrl || originalUrl;
   const categoryLabel = category ? CATEGORY_LABELS[category] : undefined;
@@ -34,7 +43,7 @@ export default function Save() {
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(tabs)');
+    router.dismissAll();
   };
 
   return (
