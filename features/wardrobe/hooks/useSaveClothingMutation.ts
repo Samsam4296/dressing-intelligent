@@ -27,7 +27,7 @@ interface SaveClothingParams {
   profileId: string;
 }
 
-interface SaveClothingResult {
+interface SaveClothingMutationResult {
   clothingId: string;
   signedUrl: string;
 }
@@ -36,7 +36,7 @@ interface SaveClothingResult {
 export const useSaveClothingMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<SaveClothingResult, Error, SaveClothingParams>({
+  return useMutation<SaveClothingMutationResult, Error, SaveClothingParams>({
     mutationKey: ['saveClothing'],
 
     mutationFn: async (params: SaveClothingParams) => {
@@ -49,6 +49,13 @@ export const useSaveClothingMutation = () => {
         throw new Error('Session expirée, veuillez vous reconnecter');
       }
       const userId = session.user.id;
+
+      // M-2: Validates storage path has userId prefix (defense-in-depth)
+      const assertUserPath = (path: string) => {
+        if (!path.startsWith(`${userId}/`)) {
+          throw new Error('Storage path mismatch');
+        }
+      };
 
       // 2. Upload images to Supabase Storage (parallel if both exist)
       const uploadPromises: Promise<{ data: string | null; error: Error | null }>[] = [];
@@ -66,8 +73,9 @@ export const useSaveClothingMutation = () => {
       // Check original upload
       const originalResult = results[0];
       if (originalResult.error || !originalResult.data) {
-        throw new Error('Échec upload image originale');
+        throw originalResult.error ?? new Error('Échec upload image originale');
       }
+      assertUserPath(originalResult.data);
 
       // Check processed upload (if applicable)
       let processedPath: string | null = null;
@@ -83,6 +91,7 @@ export const useSaveClothingMutation = () => {
             );
           }
         } else {
+          assertUserPath(processedResult.data);
           processedPath = processedResult.data;
         }
       }

@@ -192,6 +192,17 @@ describe('clothingService', () => {
       processedImagePath: 'user-123/processed.jpg',
     };
 
+    it('rejects invalid profileId UUID format', async () => {
+      const result = await clothingService.saveClothing({
+        ...validInput,
+        profileId: 'not-a-uuid',
+      });
+
+      expect(result.data).toBeNull();
+      expect(result.error?.message).toBe('Invalid profile ID format');
+      expect(supabase.from).not.toHaveBeenCalled();
+    });
+
     it('inserts with mapped EN values and returns id', async () => {
       const mockSingle = jest.fn().mockResolvedValue({
         data: { id: 'new-clothing-id' },

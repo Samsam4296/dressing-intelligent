@@ -45,12 +45,22 @@ export const SaveScreen = () => {
   const color = categoryService.parseColor(colorParam);
   const displayImageUrl = processedUrl || originalUrl;
 
+  // L-2: Basic URL shape validation for params from deep links
+  const isValidUrl = (url: string | undefined): url is string => {
+    if (!url) return false;
+    try {
+      return new URL(url).protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   // Stable mutation params — recalculated only when inputs change
   const mutationParams = useMemo(() => {
-    if (!originalUrl || !publicId || !category || !color || !profileId) return null;
+    if (!isValidUrl(originalUrl) || !publicId || !category || !color || !profileId) return null;
     return {
       originalUrl,
-      processedUrl: processedUrl || null,
+      processedUrl: isValidUrl(processedUrl) ? processedUrl : null,
       publicId,
       category,
       color,

@@ -6,7 +6,6 @@
  * Downloads from Cloudinary, uploads to Storage, creates signed URLs.
  */
 
-/* eslint-disable import/namespace -- expo-file-system namespace exports not fully resolved by plugin */
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '@/lib/supabase';
@@ -15,15 +14,29 @@ import type { ApiResponse } from '@/types';
 
 const BUCKET_NAME = 'clothes-photos';
 const SIGNED_URL_EXPIRY = 900; // 15 minutes (NFR-S3)
+const ALLOWED_SOURCE_HOST = 'res.cloudinary.com';
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic']);
+
+/** Validates that a source URL is a Cloudinary HTTPS URL (C-1: anti-SSRF) */
+const isValidSourceUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname === ALLOWED_SOURCE_HOST;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Generates a unique filename for storage
- * Format: {timestamp}_{random}.jpg
+ * Format: {timestamp}_{hex}.jpg
  */
 const generateFileName = (): string => {
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${timestamp}_${random}.jpg`;
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return `${timestamp}_${hex}.jpg`;
 };
 
 export const storageService = {
@@ -36,7 +49,13 @@ export const storageService = {
    * @returns Storage path (e.g., "{userId}/1706789012345_a1b2c3d4.jpg")
    */
   async downloadAndUploadImage(sourceUrl: string, userId: string): Promise<ApiResponse<string>> {
-    // @ts-expect-error -- cacheDirectory available at runtime via legacy API, not in SDK 54 types
+    // C-1: Validate source URL is from Cloudinary (anti-SSRF)
+    if (!isValidSourceUrl(sourceUrl)) {
+      return { data: null, error: new Error('Invalid source URL') };
+    }
+
+    // @ts-expect-error - expo-file-system v19: cacheDirectory exists at runtime but not in main module types
+    // eslint-disable-next-line import/namespace
     const tempUri = `${FileSystem.cacheDirectory}upload_${Date.now()}.jpg`;
 
     try {
@@ -44,12 +63,21 @@ export const storageService = {
       const downloadResult = await FileSystem.downloadAsync(sourceUrl, tempUri);
 
       if (downloadResult.status !== 200) {
-        throw new Error(`Download failed: HTTP ${downloadResult.status}`);
+        throw new Error('Image download failed');
+      }
+
+      // H-2: Validate Content-Type from response
+      const contentType =
+        downloadResult.headers?.['Content-Type'] || downloadResult.headers?.['content-type'];
+      if (contentType && !ALLOWED_IMAGE_TYPES.has(contentType.split(';')[0].trim())) {
+        throw new Error('Invalid image type');
       }
 
       // 2. Read as base64
       const base64Data = await FileSystem.readAsStringAsync(downloadResult.uri, {
-        encoding: 'base64',
+        // @ts-expect-error - expo-file-system v19: EncodingType exists at runtime but not in main module types
+        // eslint-disable-next-line import/namespace
+        encoding: FileSystem.EncodingType.Base64,
       });
 
       // 3. Convert base64 to ArrayBuffer (React Native compatible)
@@ -60,10 +88,11 @@ export const storageService = {
       const storagePath = `${userId}/${fileName}`;
 
       // 5. Upload to Supabase Storage
+      const uploadContentType = contentType?.split(';')[0].trim() || 'image/jpeg';
       const { error: uploadError } = await supabase.storage
         .from(BUCKET_NAME)
         .upload(storagePath, arrayBuffer, {
-          contentType: 'image/jpeg',
+          contentType: uploadContentType,
           cacheControl: '3600',
           upsert: false,
         });
@@ -74,7 +103,7 @@ export const storageService = {
 
       return { data: storagePath, error: null };
     } catch (error) {
-      captureError(error, 'wardrobe', 'storageService.downloadAndUploadImage');
+      // Error logging delegated to mutation hook (consistent with clothingService pattern)
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Upload failed'),

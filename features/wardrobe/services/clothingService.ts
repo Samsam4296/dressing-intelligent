@@ -152,6 +152,11 @@ export const clothingService = {
    * RLS policy verifies profile_id belongs to authenticated user.
    */
   async saveClothing(input: SaveClothingInput): Promise<ApiResponse<SaveClothingResult>> {
+    // Validate profileId UUID format (same pattern as updateCategory)
+    if (!UUID_REGEX.test(input.profileId)) {
+      return { data: null, error: new Error('Invalid profile ID format') };
+    }
+
     try {
       const dbCategory = UI_TO_DB_CATEGORY[input.category];
       const dbColor = UI_TO_DB_COLOR[input.color];
