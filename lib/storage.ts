@@ -78,7 +78,7 @@ export const storage = {
 
   delete: (key: string): void => {
     if (useMMKV && mmkvInstance) {
-      mmkvInstance.delete(key);
+      mmkvInstance.remove(key);
       return;
     }
     AsyncStorage.removeItem(key).catch((err) => {
@@ -135,7 +135,7 @@ export const zustandStorage: StateStorage = {
   },
   removeItem: (name: string): void | Promise<void> => {
     if (useMMKV && mmkvInstance) {
-      mmkvInstance.delete(name);
+      mmkvInstance.remove(name);
       return;
     }
     return AsyncStorage.removeItem(name) as unknown as Promise<void>;

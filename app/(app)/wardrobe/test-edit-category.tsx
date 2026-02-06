@@ -10,7 +10,7 @@
 
 import { useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
-import { Stack, Redirect } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { EditCategoryModal } from '@/features/wardrobe/components/EditCategoryModal';
 import { useUpdateCategoryMutation } from '@/features/wardrobe/hooks/useUpdateCategoryMutation';
 import { CATEGORY_LABELS } from '@/features/wardrobe/types/wardrobe.types';
@@ -27,8 +27,10 @@ export default function TestEditCategoryScreen() {
   const { mutate: updateCategory, isPending } = useUpdateCategoryMutation();
 
   // P2-04 FIX: Prevent access in production builds (after hooks)
+  const router = useRouter();
   if (!__DEV__) {
-    return <Redirect href="/(app)/wardrobe" />;
+    router.replace('/(tabs)');
+    return null;
   }
 
   const handleConfirm = (newCategory: ClothingCategory) => {

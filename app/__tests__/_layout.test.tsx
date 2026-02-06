@@ -8,7 +8,7 @@
  * 3. Activity tracking: updateLastActivity on navigation
  */
 
-import { renderHook } from '@testing-library/react-native';
+// @testing-library/react-native used for hooks in other test files
 
 // ============================================
 // Mocks
@@ -190,7 +190,6 @@ describe('Root Layout - Auth Redirect Logic', () => {
   describe('Activity tracking', () => {
     it('calls updateLastActivity when authenticated and segments change', async () => {
       const isAuthenticated = true;
-      const segments = ['(tabs)', 'settings'];
 
       if (isAuthenticated) {
         await updateLastActivity();
