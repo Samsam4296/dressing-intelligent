@@ -231,13 +231,10 @@ export const useAuth = (): AuthState => {
       }
     };
 
-    restoreSession();
-
     /**
-     * Listen to auth state changes (AC#2 - auto refresh JWT)
-     * Supabase automatically handles:
-     * - JWT refresh before 1h expiration
-     * - Session token updates
+     * Listen to auth state changes FIRST (AC#2 - auto refresh JWT)
+     * Set up listener BEFORE restoreSession to avoid missing auth events
+     * during async session restoration (fixes race condition)
      */
     const {
       data: { subscription },
@@ -301,6 +298,9 @@ export const useAuth = (): AuthState => {
           break;
       }
     });
+
+    // THEN restore session (listener is already active to catch any changes)
+    restoreSession();
 
     // Cleanup subscription on unmount
     return () => {

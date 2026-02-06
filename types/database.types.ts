@@ -255,6 +255,62 @@ export interface Database {
       };
 
       /**
+       * Subscription management (IAP receipts + status tracking)
+       */
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: SubscriptionStatus;
+          product_id: string;
+          platform: 'ios' | 'android';
+          original_transaction_id: string;
+          trial_ends_at: string | null;
+          expires_at: string;
+          auto_renewing: boolean | null;
+          raw_receipt: Json | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status: SubscriptionStatus;
+          product_id: string;
+          platform: 'ios' | 'android';
+          original_transaction_id: string;
+          trial_ends_at?: string | null;
+          expires_at: string;
+          auto_renewing?: boolean | null;
+          raw_receipt?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          status?: SubscriptionStatus;
+          product_id?: string;
+          platform?: 'ios' | 'android';
+          original_transaction_id?: string;
+          trial_ends_at?: string | null;
+          expires_at?: string;
+          auto_renewing?: boolean | null;
+          raw_receipt?: Json | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'subscriptions_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+
+      /**
        * RGPD consent tracking
        */
       user_consents: {
@@ -329,3 +385,7 @@ export type OutfitRecommendationInsert =
 export type UserSettings = Database['public']['Tables']['user_settings']['Row'];
 export type UserSettingsInsert = Database['public']['Tables']['user_settings']['Insert'];
 export type UserSettingsUpdate = Database['public']['Tables']['user_settings']['Update'];
+
+export type Subscription = Database['public']['Tables']['subscriptions']['Row'];
+export type SubscriptionInsert = Database['public']['Tables']['subscriptions']['Insert'];
+export type SubscriptionUpdate = Database['public']['Tables']['subscriptions']['Update'];

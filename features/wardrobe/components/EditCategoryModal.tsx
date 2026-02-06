@@ -6,7 +6,7 @@
  * Reuses CategorySelector from Story 2.4.
  */
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,15 +34,18 @@ export const EditCategoryModal = memo(function EditCategoryModal({
   const isDark = colorScheme === 'dark';
 
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory>(currentCategory);
+  const prevVisibleRef = useRef(visible);
 
   const hasChanged = selectedCategory !== currentCategory;
   const isDisabled = !hasChanged || isLoading;
 
-  // Reset state when modal opens
+  // P2-03 FIX: Only reset when modal opens (visible changes false→true)
+  // Prevents losing user selection if currentCategory changes while modal is open
   useEffect(() => {
-    if (visible) {
+    if (visible && !prevVisibleRef.current) {
       setSelectedCategory(currentCategory);
     }
+    prevVisibleRef.current = visible;
   }, [visible, currentCategory]);
 
   // P2-05: Stabilized callback with useCallback

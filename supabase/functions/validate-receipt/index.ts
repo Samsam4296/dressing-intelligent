@@ -134,8 +134,13 @@ async function getGoogleAccessToken(clientEmail: string, privateKey: string): Pr
 }
 
 // CORS headers for preflight requests
+// Security: Use ALLOWED_ORIGIN env var in production, reject if not set
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN');
+if (!allowedOrigin) {
+  console.warn('[SECURITY] ALLOWED_ORIGIN not set - using wildcard. Set this in production!');
+}
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin || '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -487,6 +492,21 @@ Deno.serve(async (req: Request) => {
 
     const userId = user.id;
 
+    // Rate limiting: max 10 validations per user per hour
+    const rateLimitCutoff = new Date(Date.now() - 3600000).toISOString();
+    const { count: recentValidations } = await supabaseAdmin
+      .from('subscriptions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('updated_at', rateLimitCutoff);
+
+    if (recentValidations !== null && recentValidations >= 10) {
+      return new Response(JSON.stringify({ error: 'Too many validation attempts. Please try again later.' }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Parse request body
     const body: ReceiptValidationRequest = await req.json();
     const { receipt, platform, productId } = body;
@@ -632,7 +652,6 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
-        details: err instanceof Error ? err.message : 'Unknown error',
       }),
       {
         status: 500,

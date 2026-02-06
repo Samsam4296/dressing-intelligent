@@ -136,7 +136,10 @@ const DEFAULT_DURATION = 3000;
  * ```
  */
 export const Toast = () => {
-  const { visible, type, message, hide } = useToastStore();
+  const visible = useToastStore((s) => s.visible);
+  const type = useToastStore((s) => s.type);
+  const message = useToastStore((s) => s.message);
+  const hide = useToastStore((s) => s.hide);
   const translateY = useSharedValue(-100);
   const opacity = useSharedValue(0);
 

@@ -33,8 +33,13 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // CORS headers for preflight requests
+// Security: Use ALLOWED_ORIGIN env var in production
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN');
+if (!allowedOrigin) {
+  console.warn('[SECURITY] ALLOWED_ORIGIN not set - using wildcard. Set this in production!');
+}
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin || '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
@@ -323,7 +328,6 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
-        details: err instanceof Error ? err.message : 'Unknown error',
       }),
       {
         status: 500,

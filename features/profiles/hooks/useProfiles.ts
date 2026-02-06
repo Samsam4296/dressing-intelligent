@@ -347,19 +347,17 @@ export const useSwitchProfile = () => {
     // Optimistic update: immediate UI response (AC#3, AC#5)
     onMutate: async (newProfileId) => {
       // Get fresh state at mutation time (avoid stale closure)
-      const { setCurrentProfile, currentProfileId } = useProfileStore.getState();
+      const store = useProfileStore.getState();
+      const previousProfileId = store.currentProfileId;
 
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: profileKeys.all });
 
-      // Snapshot previous state for rollback
-      const previousProfileId = currentProfileId;
-
       // Optimistic update Zustand store immediately (0ms perceived latency)
-      setCurrentProfile(newProfileId);
+      store.setCurrentProfile(newProfileId);
 
-      // Return context for potential rollback
-      return { previousProfileId };
+      // Return context for potential rollback (capture setCurrentProfile)
+      return { previousProfileId, setCurrentProfile: store.setCurrentProfile };
     },
 
     onSuccess: (result, _newProfileId, _context) => {

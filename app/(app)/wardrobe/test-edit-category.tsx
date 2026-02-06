@@ -1,15 +1,16 @@
 /**
  * Test Edit Category Screen
- * Story 2.5: Correction Catégorie
+ * Story 2.5: Correction Categorie
  *
- * ⚠️ TEMPORARY TEST SCREEN - Delete after validation or keep for Story 2.10
+ * [DEV ONLY] TEMPORARY TEST SCREEN - Delete after validation or keep for Story 2.10
+ * P2-04 FIX: Protected with __DEV__ guard to prevent production access
  *
  * End-to-end test screen for EditCategoryModal and useUpdateCategoryMutation.
  */
 
 import { useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import { EditCategoryModal } from '@/features/wardrobe/components/EditCategoryModal';
 import { useUpdateCategoryMutation } from '@/features/wardrobe/hooks/useUpdateCategoryMutation';
 import { CATEGORY_LABELS } from '@/features/wardrobe/types/wardrobe.types';
@@ -19,10 +20,16 @@ import type { ClothingCategory } from '@/features/wardrobe/types/wardrobe.types'
 const DEFAULT_TEST_UUID = '00000000-0000-0000-0000-000000000000';
 
 export default function TestEditCategoryScreen() {
+  // Hooks must be called before any conditional returns (React rules of hooks)
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<ClothingCategory>('haut');
   const [clothingId, setClothingId] = useState(DEFAULT_TEST_UUID);
   const { mutate: updateCategory, isPending } = useUpdateCategoryMutation();
+
+  // P2-04 FIX: Prevent access in production builds (after hooks)
+  if (!__DEV__) {
+    return <Redirect href="/(app)/wardrobe" />;
+  }
 
   const handleConfirm = (newCategory: ClothingCategory) => {
     updateCategory(
@@ -75,7 +82,7 @@ export default function TestEditCategoryScreen() {
         </Pressable>
 
         <Text className="mt-8 px-4 text-center text-xs text-gray-500">
-          ⚠️ Entrez un UUID valide de Supabase pour tester la mise à jour.
+          [DEV] Entrez un UUID valide de Supabase pour tester la mise a jour.
         </Text>
 
         <EditCategoryModal

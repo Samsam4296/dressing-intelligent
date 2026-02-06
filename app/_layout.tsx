@@ -3,14 +3,19 @@ import '../global.css';
 import { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { initSentry } from '@/lib/sentry';
 import { useAuth } from '@/features/auth';
 import { Toast, showToast } from '@/shared/components/Toast';
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { updateLastActivity } from '@/lib/storage';
 import { useValidateActiveProfile } from '@/features/profiles';
 
 // Initialize Sentry BEFORE any React rendering (Story 0-6)
 initSentry();
+
+// Prevent splash screen from auto-hiding until auth is initialized
+SplashScreen.preventAutoHideAsync();
 
 /**
  * Loading screen shown during auth state initialization
@@ -32,6 +37,13 @@ export default function Layout() {
 
   // Story 1.14 AC#3: Validate profile exists after session restore
   useValidateActiveProfile();
+
+  // Hide splash screen once auth state is determined
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
 
   // Story 1.14 AC#2: Display Toast if session expired due to 30-day inactivity (NFR-S9)
   useEffect(() => {
@@ -67,13 +79,17 @@ export default function Layout() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
+    const inTabsGroup = segments[0] === '(tabs)';
+
     if (!isAuthenticated && !inAuthGroup) {
       // Redirect unauthenticated users to welcome screen
       router.replace('/(auth)/welcome');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect authenticated users away from auth screens
-      // This will be updated when main app screens are created
-      router.replace('/');
+      // Redirect authenticated users away from auth screens to main app
+      router.replace('/(tabs)');
+    } else if (isAuthenticated && !inTabsGroup && !inAuthGroup && segments[0] !== '(app)') {
+      // Redirect authenticated users from root to tabs
+      router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, segments, router]);
 
@@ -83,7 +99,7 @@ export default function Layout() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -91,6 +107,6 @@ export default function Layout() {
       />
       {/* Global Toast notification - mounted at root for app-wide visibility */}
       <Toast />
-    </>
+    </ErrorBoundary>
   );
 }

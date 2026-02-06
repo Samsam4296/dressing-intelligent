@@ -60,8 +60,9 @@ export const clothingService = {
     }
 
     // P1-02: Validate category exists in mapping
+    // P2-02 FIX: Generic error message to prevent information leakage
     if (!VALID_CATEGORIES.has(category)) {
-      return { data: null, error: new Error(`Invalid category: ${category}`) };
+      return { data: null, error: new Error('Invalid category provided') };
     }
 
     try {
@@ -75,13 +76,15 @@ export const clothingService = {
         .single();
 
       if (error) {
-        throw new Error(error.message);
+        // P2-02 FIX: Generic error message to prevent Supabase details leakage
+        throw new Error('Unable to update category');
       }
 
       // Validate response category exists in mapping
       const uiCategory = DB_TO_UI_CATEGORY[data.category as DbClothingCategory];
       if (!uiCategory) {
-        throw new Error(`Unknown DB category: ${data.category}`);
+        // P2-02 FIX: Generic error message
+        throw new Error('Unable to update category');
       }
 
       return {

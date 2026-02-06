@@ -2,7 +2,8 @@ module.exports = function (api) {
   api.cache(true);
   let plugins = [];
 
-  plugins.push('react-native-worklets/plugin');
+  // Note: react-native-worklets/plugin temporarily disabled for Expo Go compatibility
+  // plugins.push('react-native-worklets/plugin');
 
   // Reanimated plugin must be listed last
   plugins.push('react-native-reanimated/plugin');

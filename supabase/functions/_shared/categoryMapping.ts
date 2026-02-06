@@ -4,14 +4,17 @@
  *
  * Shared logic for mapping Cloudinary Imagga tags to clothing categories.
  * Extracted for testability and reusability.
+ *
+ * IMPORTANT: Categories MUST match database ENUM `clothing_category`
+ * Values: 'top', 'bottom', 'dress', 'outerwear', 'shoes', 'accessory'
  */
 
 // =============================================================================
 // Types
 // =============================================================================
 
-/** The 6 supported clothing categories */
-export type ClothingCategory = 'haut' | 'bas' | 'robe' | 'veste' | 'chaussures' | 'accessoire';
+/** The 6 supported clothing categories (matches database ENUM clothing_category) */
+export type ClothingCategory = 'top' | 'bottom' | 'dress' | 'outerwear' | 'shoes' | 'accessory';
 
 /** Tag with confidence from Cloudinary Imagga */
 export interface ImaggaTag {
@@ -31,66 +34,66 @@ export interface CategoryMappingResult {
 // Mapping Configuration
 // =============================================================================
 
-/** Mapping from Cloudinary Imagga tags to our categories */
+/** Mapping from Cloudinary Imagga tags to our DB categories (English ENUM) */
 export const CATEGORY_TAG_MAPPING: Record<string, ClothingCategory> = {
-  // Hauts
-  shirt: 'haut',
-  't-shirt': 'haut',
-  tshirt: 'haut',
-  blouse: 'haut',
-  sweater: 'haut',
-  pullover: 'haut',
-  hoodie: 'haut',
-  top: 'haut',
-  polo: 'haut',
-  'tank top': 'haut',
-  cardigan: 'haut',
+  // Tops (DB: 'top')
+  shirt: 'top',
+  't-shirt': 'top',
+  tshirt: 'top',
+  blouse: 'top',
+  sweater: 'top',
+  pullover: 'top',
+  hoodie: 'top',
+  top: 'top',
+  polo: 'top',
+  'tank top': 'top',
+  cardigan: 'top',
 
-  // Bas
-  pants: 'bas',
-  trousers: 'bas',
-  jeans: 'bas',
-  shorts: 'bas',
-  skirt: 'bas',
-  leggings: 'bas',
+  // Bottoms (DB: 'bottom')
+  pants: 'bottom',
+  trousers: 'bottom',
+  jeans: 'bottom',
+  shorts: 'bottom',
+  skirt: 'bottom',
+  leggings: 'bottom',
 
-  // Robes
-  dress: 'robe',
-  gown: 'robe',
-  jumpsuit: 'robe',
-  romper: 'robe',
+  // Dresses (DB: 'dress')
+  dress: 'dress',
+  gown: 'dress',
+  jumpsuit: 'dress',
+  romper: 'dress',
 
-  // Vestes
-  jacket: 'veste',
-  coat: 'veste',
-  blazer: 'veste',
-  vest: 'veste',
-  parka: 'veste',
-  windbreaker: 'veste',
+  // Outerwear (DB: 'outerwear')
+  jacket: 'outerwear',
+  coat: 'outerwear',
+  blazer: 'outerwear',
+  vest: 'outerwear',
+  parka: 'outerwear',
+  windbreaker: 'outerwear',
 
-  // Chaussures
-  shoes: 'chaussures',
-  sneakers: 'chaussures',
-  boots: 'chaussures',
-  sandals: 'chaussures',
-  heels: 'chaussures',
-  loafers: 'chaussures',
-  slippers: 'chaussures',
+  // Shoes (DB: 'shoes')
+  shoes: 'shoes',
+  sneakers: 'shoes',
+  boots: 'shoes',
+  sandals: 'shoes',
+  heels: 'shoes',
+  loafers: 'shoes',
+  slippers: 'shoes',
 
-  // Accessoires
-  hat: 'accessoire',
-  cap: 'accessoire',
-  scarf: 'accessoire',
-  belt: 'accessoire',
-  bag: 'accessoire',
-  handbag: 'accessoire',
-  backpack: 'accessoire',
-  watch: 'accessoire',
-  jewelry: 'accessoire',
-  glasses: 'accessoire',
-  sunglasses: 'accessoire',
-  tie: 'accessoire',
-  gloves: 'accessoire',
+  // Accessories (DB: 'accessory')
+  hat: 'accessory',
+  cap: 'accessory',
+  scarf: 'accessory',
+  belt: 'accessory',
+  bag: 'accessory',
+  handbag: 'accessory',
+  backpack: 'accessory',
+  watch: 'accessory',
+  jewelry: 'accessory',
+  glasses: 'accessory',
+  sunglasses: 'accessory',
+  tie: 'accessory',
+  gloves: 'accessory',
 };
 
 // =============================================================================
@@ -110,7 +113,7 @@ export const CATEGORY_TAG_MAPPING: Record<string, ClothingCategory> = {
  *   { tag: 'shirt', confidence: 0.95 },
  *   { tag: 'clothing', confidence: 0.85 }
  * ]);
- * // result: { category: 'haut', confidence: 95 }
+ * // result: { category: 'top', confidence: 95 }
  * ```
  */
 export function mapCloudinaryTagsToCategory(tags: ImaggaTag[]): CategoryMappingResult | null {

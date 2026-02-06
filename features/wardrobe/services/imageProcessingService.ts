@@ -246,14 +246,14 @@ export const imageProcessingService = {
    */
   async compressImage(uri: string): Promise<string> {
     try {
-      // Get original image info to determine resize ratio
+      // Only constrain width - height scales proportionally to preserve aspect ratio.
+      // Setting both width AND height would distort the image.
       const result = await ImageManipulator.manipulateAsync(
         uri,
         [
           {
             resize: {
               width: MAX_IMAGE_DIMENSION,
-              height: MAX_IMAGE_DIMENSION,
             },
           },
         ],

@@ -8,15 +8,14 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { captureError } from '@/lib/logger';
+import { queryKeys } from '@/lib/query-client';
 import { showToast } from '@/shared/components/Toast';
 import { clothingService, type UpdateCategoryResult } from '../services/clothingService';
 import type { ClothingCategory } from '../types/wardrobe.types';
 
-// P3-05: Query keys factory for type safety and consistency
-export const wardrobeKeys = {
-  all: ['clothes'] as const,
-  detail: (id: string) => ['clothes', id] as const,
-};
+// P2-01 FIX: Use centralized queryKeys from lib/query-client.ts
+// Re-export for backwards compatibility
+export const wardrobeKeys = queryKeys.clothes;
 
 interface UpdateCategoryParams {
   clothingId: string;
@@ -85,8 +84,9 @@ export const useUpdateCategoryMutation = () => {
       showToast({ type: 'success', message: 'Catégorie mise à jour' });
     },
 
-    // Always refetch to ensure server state
+    // P3-01 FIX: Invalidate both list and detail to ensure server consistency
     onSettled: (_data, _error, { clothingId }) => {
+      queryClient.invalidateQueries({ queryKey: wardrobeKeys.all });
       queryClient.invalidateQueries({ queryKey: wardrobeKeys.detail(clothingId), exact: true });
     },
   });
