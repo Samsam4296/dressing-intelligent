@@ -454,6 +454,7 @@ jest.mock('expo-linking', () => ({
   openSettings: jest.fn(),
   openURL: jest.fn(),
   canOpenURL: jest.fn().mockResolvedValue(true),
+  createURL: jest.fn((path) => `dressing-intelligent://${path}`),
 }));
 
 // Mock expo-file-system (Story 2.2)

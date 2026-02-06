@@ -46,7 +46,7 @@ describe('authService', () => {
         email: 'test@example.com',
         password: 'TestPassword123',
         options: {
-          emailRedirectTo: 'dressingintelligent://verify-email',
+          emailRedirectTo: 'dressing-intelligent://verify-email',
           data: {
             display_name: undefined,
           },
@@ -152,7 +152,7 @@ describe('authService', () => {
         email: 'test@example.com',
         password: 'TestPassword123',
         options: {
-          emailRedirectTo: 'dressingintelligent://verify-email',
+          emailRedirectTo: 'dressing-intelligent://verify-email',
           data: {
             display_name: 'Test User',
           },
