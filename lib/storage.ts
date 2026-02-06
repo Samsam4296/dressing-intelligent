@@ -25,6 +25,7 @@ let useMMKV = false;
 function initMMKV(): void {
   try {
     // Dynamic require to avoid crash in Expo Go
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { MMKV } = require('react-native-mmkv');
     const encryptionKey = process.env.EXPO_PUBLIC_MMKV_KEY;
 

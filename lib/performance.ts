@@ -109,6 +109,7 @@ export async function measureOperation<T>(
           span?.setAttribute('threshold_ms', threshold);
 
           if (__DEV__) {
+            // eslint-disable-next-line no-console
             console.warn(
               `[Performance] ${operationName} exceeded threshold: ${durationMs.toFixed(0)}ms > ${threshold}ms`
             );
@@ -246,6 +247,7 @@ export function recordTiming(
   span?.end();
 
   if (__DEV__) {
+    // eslint-disable-next-line no-console
     console.log(`[Performance] ${metricName}: ${durationMs.toFixed(0)}ms`);
   }
 }
