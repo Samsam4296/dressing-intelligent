@@ -8,6 +8,7 @@ import { initSentry } from '@/lib/sentry';
 import { useAuth } from '@/features/auth';
 import { Toast, showToast } from '@/shared/components/Toast';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { Providers } from '@/components/providers';
 import { updateLastActivity } from '@/lib/storage';
 import { useValidateActiveProfile } from '@/features/profiles';
 
@@ -29,7 +30,25 @@ function LoadingScreen() {
   );
 }
 
+/**
+ * Root Layout - wraps app with Providers (QueryClient, GestureHandler)
+ * Providers must be at the root so all child components can use TanStack Query hooks
+ */
 export default function Layout() {
+  return (
+    <Providers>
+      <ErrorBoundary>
+        <RootLayoutNav />
+      </ErrorBoundary>
+    </Providers>
+  );
+}
+
+/**
+ * Root navigation with auth logic
+ * Separated from Layout so TanStack Query hooks work (needs QueryClientProvider parent)
+ */
+function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
   const { isAuthenticated, isLoading, inactivityError } = useAuth();
@@ -99,7 +118,7 @@ export default function Layout() {
   }
 
   return (
-    <ErrorBoundary>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -107,6 +126,6 @@ export default function Layout() {
       />
       {/* Global Toast notification - mounted at root for app-wide visibility */}
       <Toast />
-    </ErrorBoundary>
+    </>
   );
 }
