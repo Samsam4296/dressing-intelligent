@@ -14,7 +14,8 @@
     "expo:doctor": "npx expo-doctor || echo 'Expo doctor completed with warnings (known issues: reanimated 3.x intentional, .expo git check is false positive)'",
     "sentry:sourcemaps": "sentry-cli releases new \"$npm_package_version\" && sentry-cli releases files \"$npm_package_version\" upload-sourcemaps ./dist && sentry-cli releases finalize \"$npm_package_version\"",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm expo:doctor",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -67,8 +68,10 @@
     "eslint": "^9.25.1",
     "eslint-config-expo": "~10.0.0",
     "eslint-config-prettier": "^10.1.2",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-expo": "^52.0.6",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "react-test-renderer": "19.1.0",
@@ -81,6 +84,15 @@
     "overrides": {
       "@isaacs/brace-expansion": ">=5.0.1"
     }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.json": [
+      "prettier --write"
+    ]
   },
   "expo": {
     "install": {
