@@ -22,6 +22,7 @@ jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler)
   return { remove: mockRemove };
 });
 
+import * as Sentry from '@sentry/react-native';
 import { ColorSelectionScreen } from '../ColorSelectionScreen';
 import { router } from 'expo-router';
 
@@ -97,7 +98,7 @@ describe('ColorSelectionScreen', () => {
     );
   });
 
-  it('shows error state when params missing', () => {
+  it('shows error state and logs to Sentry when params missing', () => {
     mockUseLocalSearchParams.mockReturnValue({
       originalUrl: '',
       processedUrl: '',
@@ -109,10 +110,21 @@ describe('ColorSelectionScreen', () => {
 
     expect(screen.getByText(/paramètres manquants/i)).toBeTruthy();
     expect(screen.getByTestId('error-back-button')).toBeTruthy();
+    expect(Sentry.captureMessage).toHaveBeenCalledWith(
+      'ColorSelectionScreen: missing required params',
+      expect.objectContaining({
+        level: 'warning',
+        extra: {
+          hasOriginalUrl: false,
+          hasPublicId: false,
+          hasCategory: false,
+        },
+      })
+    );
   });
 
   it('triggers confirmation dialog on Android back button (BackHandler)', () => {
-    render(<ColorSelectionScreen />);
+    const { unmount } = render(<ColorSelectionScreen />);
 
     expect(BackHandler.addEventListener).toHaveBeenCalledWith(
       'hardwareBackPress',
@@ -127,6 +139,10 @@ describe('ColorSelectionScreen', () => {
       expect.any(String),
       expect.any(Array)
     );
+
+    // Verify cleanup removes the listener on unmount
+    unmount();
+    expect(mockRemove).toHaveBeenCalled();
   });
 
   it('replaces color selection when selecting a different color', () => {

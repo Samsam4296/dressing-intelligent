@@ -24,6 +24,9 @@ const LIGHT_COLORS = new Set<ClothingColor>(['blanc', 'beige']);
 /** Stable style for 5-column grid items (avoids re-creating objects per render) */
 const ITEM_STYLE = { width: '20%' } as const;
 
+/** Stable style for selected checkmark overlay */
+const CHECKMARK_OVERLAY_STYLE = { backgroundColor: 'rgba(0,0,0,0.3)' } as const;
+
 /**
  * Renders the multicolor circle as 4 colored quadrants.
  * Avoids dependency on expo-linear-gradient.
@@ -92,7 +95,7 @@ export const ColorSelector = memo(function ColorSelector({
               {isSelected && (
                 <View
                   className="absolute inset-0 items-center justify-center rounded-full"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                  style={CHECKMARK_OVERLAY_STYLE}
                   testID={`color-check-${color}`}>
                   <Ionicons name="checkmark" size={20} color="white" />
                 </View>

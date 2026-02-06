@@ -39,7 +39,7 @@ export default function Save() {
   const imageUrl = processedUrl || originalUrl;
   const categoryLabel = category ? CATEGORY_LABELS[category] : undefined;
   const colorLabel = color ? COLOR_LABELS[color] : undefined;
-  const colorHex = color && color !== 'multicolore' ? COLOR_HEX[color] : undefined;
+  const colorHex = color ? COLOR_HEX[color] : undefined;
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
