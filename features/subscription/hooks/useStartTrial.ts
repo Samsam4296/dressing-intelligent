@@ -96,7 +96,7 @@ export const useStartTrial = (): UseStartTrialReturn => {
 
       // Check if already processed (race condition: listener + direct return)
       if (processedTransactions.current.has(transactionId)) {
-        console.log('Transaction already processed, skipping:', transactionId);
+        Sentry.addBreadcrumb({ category: 'subscription', message: `Transaction already processed: ${transactionId}`, level: 'info' });
         return;
       }
 

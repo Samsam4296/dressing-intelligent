@@ -227,7 +227,7 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
       });
       return false;
     }
-  }, []);
+  }, [cooldownSecondsRemaining, isCooldownActive, startCooldown]);
 
   /**
    * Confirm password reset with new password (AC#3, AC#4)

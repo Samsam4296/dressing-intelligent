@@ -63,6 +63,7 @@ export const logger = {
     const errorObj = error instanceof Error ? error : new Error(String(error));
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.error('[Logger.error]', errorObj.message, context);
     }
 
@@ -82,6 +83,7 @@ export const logger = {
    */
   warn(message: string, context?: LogContext): void {
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.warn('[Logger.warn]', message, context);
     }
 
@@ -102,6 +104,7 @@ export const logger = {
    */
   info(message: string, context?: LogContext): void {
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.info('[Logger.info]', message, context);
     }
 
@@ -122,6 +125,7 @@ export const logger = {
    */
   debug(message: string, data?: unknown): void {
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Logger.debug]', message, data);
     }
     // Debug messages are not sent to Sentry
@@ -140,6 +144,7 @@ export const logger = {
     });
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Breadcrumb]', category, message, data);
     }
   },
@@ -159,6 +164,7 @@ export const logger = {
     }
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Logger.setUser]', { userId, profileId });
     }
   },
@@ -171,6 +177,7 @@ export const logger = {
     Sentry.setTag('profile_id', undefined);
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Logger.clearUser]');
     }
   },
@@ -182,6 +189,7 @@ export const logger = {
     Sentry.setContext(name, data);
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Logger.setContext]', name, data);
     }
   },
@@ -193,6 +201,7 @@ export const logger = {
     Sentry.setTag(key, value);
 
     if (__DEV__) {
+      // eslint-disable-next-line no-console
       console.log('[Logger.setTag]', key, value);
     }
   },
@@ -228,6 +237,7 @@ export function captureError(
  */
 export function captureMessage(message: string, level: LogLevel, context?: LogContext): void {
   if (__DEV__) {
+    // eslint-disable-next-line no-console
     const logFn = level === 'error' || level === 'fatal' ? console.error : console.log;
     logFn(`[Logger.${level}]`, message, context);
   }

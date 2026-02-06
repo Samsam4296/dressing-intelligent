@@ -119,7 +119,7 @@ export const useDeleteAccount = ({
     setPassword('');
     setError(null);
     onClose();
-  }, [onClose]);
+  }, [onClose, setPassword]);
 
   /**
    * Clear all local state after deletion (AC#3)
