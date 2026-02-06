@@ -112,28 +112,24 @@ export default function SettingsScreen() {
    * Handle sign out
    */
   const handleSignOut = () => {
-    Alert.alert(
-      'Se déconnecter',
-      'Voulez-vous vraiment vous déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: async () => {
-            setIsSigningOut(true);
-            const { error } = await authService.signOut();
-            setIsSigningOut(false);
-            if (error) {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert('Erreur', error.message);
-            } else {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            }
-          },
+    Alert.alert('Se déconnecter', 'Voulez-vous vraiment vous déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Se déconnecter',
+        style: 'destructive',
+        onPress: async () => {
+          setIsSigningOut(true);
+          const { error } = await authService.signOut();
+          setIsSigningOut(false);
+          if (error) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Erreur', error.message);
+          } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   /**

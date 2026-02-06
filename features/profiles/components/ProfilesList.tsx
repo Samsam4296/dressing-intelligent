@@ -143,7 +143,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
           onPress: () => {
             Alert.alert(
               'Profil actif',
-              'Veuillez d\u2019abord changer de profil actif avant de le supprimer.',
+              'Veuillez d\u2019abord changer de profil actif avant de le supprimer.'
             );
           },
         });
@@ -158,11 +158,7 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
 
     buttons.push({ text: 'Annuler', style: 'cancel' });
 
-    Alert.alert(
-      profile.display_name,
-      'Que souhaitez-vous faire ?',
-      buttons,
-    );
+    Alert.alert(profile.display_name, 'Que souhaitez-vous faire ?', buttons);
   };
 
   /**

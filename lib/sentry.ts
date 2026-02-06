@@ -49,7 +49,6 @@ export function initSentry(): void {
     tracesSampleRate: 0.2,
 
     // Release tracking tied to app version
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     release: `dressing-intelligent@${require('../app.json').expo.version}`,
 
     // Disabled in development

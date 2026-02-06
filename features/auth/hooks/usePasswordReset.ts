@@ -164,70 +164,73 @@ export const usePasswordReset = (): UsePasswordResetReturn => {
    * @param email - User's email address
    * @returns Promise<boolean> - true if successful
    */
-  const requestPasswordReset = useCallback(async (email: string): Promise<boolean> => {
-    // Code Review Fix #5: Check cooldown before allowing request
-    if (isCooldownActive) {
-      setRequestState({
-        isLoading: false,
-        isSuccess: false,
-        error: {
-          code: 'COOLDOWN_ACTIVE',
-          message: `Veuillez patienter ${cooldownSecondsRemaining} secondes avant de réessayer`,
-        },
-      });
-      return false;
-    }
-
-    setRequestState({
-      isLoading: true,
-      isSuccess: false,
-      error: null,
-    });
-
-    try {
-      const response = await authService.requestPasswordReset(email);
-
-      if (response.error) {
+  const requestPasswordReset = useCallback(
+    async (email: string): Promise<boolean> => {
+      // Code Review Fix #5: Check cooldown before allowing request
+      if (isCooldownActive) {
         setRequestState({
           isLoading: false,
           isSuccess: false,
-          error: response.error,
+          error: {
+            code: 'COOLDOWN_ACTIVE',
+            message: `Veuillez patienter ${cooldownSecondsRemaining} secondes avant de réessayer`,
+          },
         });
         return false;
       }
 
       setRequestState({
-        isLoading: false,
-        isSuccess: true,
+        isLoading: true,
+        isSuccess: false,
         error: null,
       });
 
-      // Code Review Fix #5: Start cooldown on successful request
-      startCooldown();
+      try {
+        const response = await authService.requestPasswordReset(email);
 
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'Password reset email requested successfully',
-        level: 'info',
-      });
+        if (response.error) {
+          setRequestState({
+            isLoading: false,
+            isSuccess: false,
+            error: response.error,
+          });
+          return false;
+        }
 
-      return true;
-    } catch (err) {
-      Sentry.captureException(err, {
-        tags: { feature: 'auth', action: 'requestPasswordReset' },
-      });
+        setRequestState({
+          isLoading: false,
+          isSuccess: true,
+          error: null,
+        });
 
-      setRequestState({
-        isLoading: false,
-        isSuccess: false,
-        error: {
-          code: 'UNEXPECTED_ERROR',
-          message: 'Une erreur inattendue est survenue',
-        },
-      });
-      return false;
-    }
-  }, [cooldownSecondsRemaining, isCooldownActive, startCooldown]);
+        // Code Review Fix #5: Start cooldown on successful request
+        startCooldown();
+
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'Password reset email requested successfully',
+          level: 'info',
+        });
+
+        return true;
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { feature: 'auth', action: 'requestPasswordReset' },
+        });
+
+        setRequestState({
+          isLoading: false,
+          isSuccess: false,
+          error: {
+            code: 'UNEXPECTED_ERROR',
+            message: 'Une erreur inattendue est survenue',
+          },
+        });
+        return false;
+      }
+    },
+    [cooldownSecondsRemaining, isCooldownActive, startCooldown]
+  );
 
   /**
    * Confirm password reset with new password (AC#3, AC#4)
