@@ -50,7 +50,7 @@ describe('clothingService', () => {
         const result = await clothingService.updateCategory(validUUID, 'invalid' as any);
 
         expect(result.data).toBeNull();
-        expect(result.error?.message).toBe('Invalid category: invalid');
+        expect(result.error?.message).toBe('Invalid category provided');
       });
 
       it('accepts valid UUID and category', async () => {
@@ -116,7 +116,7 @@ describe('clothingService', () => {
         const result = await clothingService.updateCategory(validUUID, 'haut');
 
         expect(result.data).toBeNull();
-        expect(result.error?.message).toBe('Row not found');
+        expect(result.error?.message).toBe('Unable to update category');
       });
     });
 
@@ -173,7 +173,7 @@ describe('clothingService', () => {
         const result = await clothingService.updateCategory(validUUID, 'haut');
 
         expect(result.data).toBeNull();
-        expect(result.error?.message).toBe('Unknown DB category: unknown');
+        expect(result.error?.message).toBe('Unable to update category');
       });
     });
   });

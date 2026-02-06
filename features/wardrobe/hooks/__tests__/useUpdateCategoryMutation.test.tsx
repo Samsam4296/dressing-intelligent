@@ -189,7 +189,7 @@ describe('useUpdateCategoryMutation', () => {
   describe('Query keys', () => {
     it('exports wardrobeKeys for cache management', () => {
       expect(wardrobeKeys.all).toEqual(['clothes']);
-      expect(wardrobeKeys.detail('abc')).toEqual(['clothes', 'abc']);
+      expect(wardrobeKeys.detail('abc')).toEqual(['clothes', 'detail', 'abc']);
     });
   });
 
