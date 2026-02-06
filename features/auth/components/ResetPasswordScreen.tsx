@@ -30,6 +30,7 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -118,7 +119,7 @@ export const ResetPasswordScreen: React.FC = () => {
   );
 
   // Shake animation
-  const triggerShake = useCallback((shakeValue: Animated.SharedValue<number>) => {
+  const triggerShake = useCallback((shakeValue: SharedValue<number>) => {
     shakeValue.value = withSequence(
       withTiming(-10, { duration: 50 }),
       withTiming(10, { duration: 50 }),

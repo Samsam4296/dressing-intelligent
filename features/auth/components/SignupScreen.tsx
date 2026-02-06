@@ -32,6 +32,7 @@ import Animated, {
   withSpring,
   withSequence,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -161,7 +162,7 @@ export const SignupScreen: React.FC = () => {
   const confirmShake = useSharedValue(0);
 
   // Shake animation for validation errors (AC#6)
-  const triggerShake = useCallback((shakeValue: Animated.SharedValue<number>) => {
+  const triggerShake = useCallback((shakeValue: SharedValue<number>) => {
     shakeValue.value = withSequence(
       withTiming(-10, { duration: 50 }),
       withTiming(10, { duration: 50 }),
