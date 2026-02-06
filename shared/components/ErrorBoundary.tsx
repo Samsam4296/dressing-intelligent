@@ -48,7 +48,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
             Une erreur est survenue
           </Text>
           <Text className="mb-6 text-center text-base text-gray-600 dark:text-gray-400">
-            L'application a rencontré un problème inattendu.
+            {"L'application a rencontré un problème inattendu."}
           </Text>
           <Pressable
             className="min-h-[44px] min-w-[44px] rounded-xl bg-blue-600 px-6 py-3"
