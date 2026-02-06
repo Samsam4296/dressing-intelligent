@@ -54,6 +54,105 @@ export const CATEGORY_ORDER: ClothingCategory[] = [
 ];
 
 // ============================================
+// Color Types (Story 2.6)
+// ============================================
+
+/**
+ * The 14 supported clothing colors (UI values in French)
+ * Maps to DB enum `clothing_color` (English values)
+ */
+export type ClothingColor =
+  | 'noir'
+  | 'blanc'
+  | 'gris'
+  | 'marine'
+  | 'bleu'
+  | 'rouge'
+  | 'rose'
+  | 'vert'
+  | 'jaune'
+  | 'orange'
+  | 'violet'
+  | 'marron'
+  | 'beige'
+  | 'multicolore';
+
+/**
+ * Labels français pour affichage UI
+ */
+export const COLOR_LABELS: Record<ClothingColor, string> = {
+  noir: 'Noir',
+  blanc: 'Blanc',
+  gris: 'Gris',
+  marine: 'Marine',
+  bleu: 'Bleu',
+  rouge: 'Rouge',
+  rose: 'Rose',
+  vert: 'Vert',
+  jaune: 'Jaune',
+  orange: 'Orange',
+  violet: 'Violet',
+  marron: 'Marron',
+  beige: 'Beige',
+  multicolore: 'Multi',
+};
+
+/**
+ * Hex codes for color circle rendering
+ * Adjusted for visibility on dark backgrounds
+ * noir: #374151 (gray-700) for contrast on bg-gray-900
+ */
+export const COLOR_HEX: Record<ClothingColor, string> = {
+  noir: '#374151',
+  blanc: '#F9FAFB',
+  gris: '#9CA3AF',
+  marine: '#1E3A5F',
+  bleu: '#3B82F6',
+  rouge: '#EF4444',
+  rose: '#EC4899',
+  vert: '#22C55E',
+  jaune: '#EAB308',
+  orange: '#F97316',
+  violet: '#8B5CF6',
+  marron: '#92400E',
+  beige: '#D4B896',
+  multicolore: 'multicolor',
+};
+
+/**
+ * Display order for colors (5-column × 3-row grid)
+ * Row 1: Neutrals (noir, blanc, gris, marine, bleu)
+ * Row 2: Vivids (rouge, rose, vert, jaune, orange)
+ * Row 3: Remaining (violet, marron, beige, multicolore)
+ */
+export const COLOR_ORDER: ClothingColor[] = [
+  'noir',
+  'blanc',
+  'gris',
+  'marine',
+  'bleu',
+  'rouge',
+  'rose',
+  'vert',
+  'jaune',
+  'orange',
+  'violet',
+  'marron',
+  'beige',
+  'multicolore',
+];
+
+/**
+ * Params for ColorSelectionScreen navigation (Expo Router string params)
+ */
+export interface ColorSelectionParams {
+  originalUrl: string;
+  processedUrl: string;
+  publicId: string;
+  category: string;
+}
+
+// ============================================
 // Processing Types (Story 2.3 + 2.4)
 // ============================================
 

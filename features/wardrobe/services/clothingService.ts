@@ -1,14 +1,18 @@
 /**
  * Clothing Service
  * Story 2.5: Correction Catégorie
+ * Story 2.6: Sélection Couleur
  *
  * Service for managing clothing items in Supabase.
- * Handles category mapping between UI (French) and DB (English).
+ * Handles category and color mapping between UI (French) and DB (English).
  */
 
 import { supabase } from '@/lib/supabase';
-import type { ClothingCategory } from '../types/wardrobe.types';
-import type { ClothingCategory as DbClothingCategory } from '@/types/database.types';
+import type { ClothingCategory, ClothingColor } from '../types/wardrobe.types';
+import type {
+  ClothingCategory as DbClothingCategory,
+  ClothingColor as DbClothingColor,
+} from '@/types/database.types';
 
 /** Map UI categories (French) to DB categories (English) */
 const UI_TO_DB_CATEGORY: Record<ClothingCategory, DbClothingCategory> = {
@@ -28,6 +32,42 @@ const DB_TO_UI_CATEGORY: Record<DbClothingCategory, ClothingCategory> = {
   outerwear: 'veste',
   shoes: 'chaussures',
   accessory: 'accessoire',
+};
+
+/** Map UI colors (French) to DB colors (English) */
+export const UI_TO_DB_COLOR: Record<ClothingColor, DbClothingColor> = {
+  noir: 'black',
+  blanc: 'white',
+  gris: 'gray',
+  marine: 'navy',
+  bleu: 'blue',
+  rouge: 'red',
+  rose: 'pink',
+  vert: 'green',
+  jaune: 'yellow',
+  orange: 'orange',
+  violet: 'purple',
+  marron: 'brown',
+  beige: 'beige',
+  multicolore: 'multicolor',
+};
+
+/** Map DB colors (English) to UI colors (French) */
+export const DB_TO_UI_COLOR: Record<DbClothingColor, ClothingColor> = {
+  black: 'noir',
+  white: 'blanc',
+  gray: 'gris',
+  navy: 'marine',
+  blue: 'bleu',
+  red: 'rouge',
+  pink: 'rose',
+  green: 'vert',
+  yellow: 'jaune',
+  orange: 'orange',
+  purple: 'violet',
+  brown: 'marron',
+  beige: 'beige',
+  multicolor: 'multicolore',
 };
 
 /** Valid UI category values for runtime validation */
