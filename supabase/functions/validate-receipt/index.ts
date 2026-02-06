@@ -501,10 +501,13 @@ Deno.serve(async (req: Request) => {
       .gte('updated_at', rateLimitCutoff);
 
     if (recentValidations !== null && recentValidations >= 10) {
-      return new Response(JSON.stringify({ error: 'Too many validation attempts. Please try again later.' }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Too many validation attempts. Please try again later.' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Parse request body

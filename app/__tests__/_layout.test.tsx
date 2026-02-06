@@ -74,11 +74,7 @@ import { updateLastActivity } from '@/lib/storage';
  * into testable units.
  */
 
-function simulateRedirectLogic(
-  isAuthenticated: boolean,
-  isLoading: boolean,
-  segments: string[]
-) {
+function simulateRedirectLogic(isAuthenticated: boolean, isLoading: boolean, segments: string[]) {
   if (isLoading) return;
 
   const inAuthGroup = segments[0] === '(auth)';
@@ -169,7 +165,7 @@ describe('Root Layout - Auth Redirect Logic', () => {
 
   describe('Inactivity error', () => {
     it('shows toast when inactivityError is set', () => {
-      const error = 'Votre session a expiré après 30 jours d\'inactivité';
+      const error = "Votre session a expiré après 30 jours d'inactivité";
       // Simulating the useEffect
       if (error) {
         showToast({ type: 'error', message: error });
