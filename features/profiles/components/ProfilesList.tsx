@@ -21,7 +21,7 @@
  */
 
 import { useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInRight, Layout } from 'react-native-reanimated';
@@ -119,18 +119,50 @@ export const ProfilesList = ({ onAddProfile, onProfilePress }: ProfilesListProps
 
   /**
    * Handle long press on any profile
-   * Story 1.8 AC#1: Long press on active profile opens edit modal
-   * Story 1.9 AC#1: Long press on non-active profile opens delete modal
+   * Shows action sheet with Edit and Delete options
+   * Story 1.8 AC#1: Edit profile
+   * Story 1.9 AC#1: Delete profile
    */
   const handleLongPress = (profile: Profile) => {
     const isActive = profile.id === currentProfileId;
-    if (isActive) {
-      // Active profile → open edit modal
-      setEditingProfile(profile);
-    } else {
-      // Non-active profile → open delete modal
-      setDeletingProfile(profile);
+    const isLastProfile = profileCount <= 1;
+
+    const buttons: { text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }[] = [
+      {
+        text: 'Modifier',
+        onPress: () => setEditingProfile(profile),
+      },
+    ];
+
+    // Allow delete only if not the last profile
+    if (!isLastProfile) {
+      if (isActive) {
+        buttons.push({
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Profil actif',
+              'Veuillez d\u2019abord changer de profil actif avant de le supprimer.',
+            );
+          },
+        });
+      } else {
+        buttons.push({
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: () => setDeletingProfile(profile),
+        });
+      }
     }
+
+    buttons.push({ text: 'Annuler', style: 'cancel' });
+
+    Alert.alert(
+      profile.display_name,
+      'Que souhaitez-vous faire ?',
+      buttons,
+    );
   };
 
   /**

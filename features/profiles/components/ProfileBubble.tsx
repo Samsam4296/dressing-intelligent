@@ -147,9 +147,9 @@ export const ProfileBubble = ({
       accessibilityState={{ selected: isActive, disabled: !isInteractive }}
       accessibilityHint={
         isActive && canLongPress
-          ? 'Appui long pour modifier ce profil'
+          ? 'Appui long pour gérer ce profil'
           : !isActive && canLongPress
-            ? 'Appuyer pour changer, appui long pour supprimer'
+            ? 'Appuyer pour changer, appui long pour gérer'
             : isActive
               ? 'Profil actuellement actif'
               : 'Appuyer pour changer vers ce profil'

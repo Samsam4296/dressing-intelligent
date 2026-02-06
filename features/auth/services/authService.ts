@@ -14,6 +14,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { storage, STORAGE_KEYS } from '@/lib/storage';
 import * as Sentry from '@sentry/react-native';
+import * as Linking from 'expo-linking';
 
 /**
  * Map Supabase auth error codes to user-friendly French messages for SignUp
@@ -252,7 +253,7 @@ export const authService = {
         email: request.email,
         password: request.password,
         options: {
-          emailRedirectTo: 'dressingintelligent://verify-email',
+          emailRedirectTo: Linking.createURL('verify-email'),
           data: {
             display_name: request.displayName,
           },
@@ -469,7 +470,7 @@ export const authService = {
       // Call Supabase resetPasswordForEmail
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         // Deep link to the reset-password page in the app
-        redirectTo: 'dressing-intelligent://reset-password',
+        redirectTo: Linking.createURL('reset-password'),
       });
 
       if (error) {

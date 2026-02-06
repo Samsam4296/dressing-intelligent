@@ -15,10 +15,11 @@
  */
 
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, View, Text, Pressable, StatusBar } from 'react-native';
+import { SafeAreaView, ScrollView, View, Text, Pressable, StatusBar, Alert } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/features/auth';
+import * as Haptics from 'expo-haptics';
+import { useAuth, authService } from '@/features/auth';
 import { DeleteAccountModal } from '@/features/settings';
 
 /**
@@ -105,6 +106,35 @@ export default function SettingsScreen() {
 
   // Delete account modal state
   const [isDeleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  /**
+   * Handle sign out
+   */
+  const handleSignOut = () => {
+    Alert.alert(
+      'Se déconnecter',
+      'Voulez-vous vraiment vous déconnecter ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Se déconnecter',
+          style: 'destructive',
+          onPress: async () => {
+            setIsSigningOut(true);
+            const { error } = await authService.signOut();
+            setIsSigningOut(false);
+            if (error) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert('Erreur', error.message);
+            } else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   /**
    * Handle delete account button press (AC#1)
@@ -148,6 +178,15 @@ export default function SettingsScreen() {
               </View>
             </View>
           )}
+
+          {/* Sign out button */}
+          <SettingsItem
+            icon="log-out-outline"
+            title="Se déconnecter"
+            subtitle={isSigningOut ? 'Déconnexion en cours...' : undefined}
+            onPress={handleSignOut}
+            testID="sign-out-button"
+          />
         </View>
 
         {/* Danger Zone Section */}
