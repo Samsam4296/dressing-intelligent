@@ -8,11 +8,17 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import type { ClothingCategory, ClothingColor } from '../types/wardrobe.types';
+import type {
+  ClothingCategory,
+  ClothingColor,
+  SaveClothingInput,
+  SaveClothingResult,
+} from '../types/wardrobe.types';
 import type {
   ClothingCategory as DbClothingCategory,
   ClothingColor as DbClothingColor,
 } from '@/types/database.types';
+import type { ApiResponse } from '@/types';
 
 /** Map UI categories (French) to DB categories (English) */
 const UI_TO_DB_CATEGORY: Record<ClothingCategory, DbClothingCategory> = {
@@ -133,6 +139,48 @@ export const clothingService = {
       };
     } catch (error) {
       // P1-01: No Sentry here - error logging handled in mutation hook
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
+    }
+  },
+
+  /**
+   * Creates a new clothing item in the database.
+   * Maps UI values (French) to DB values (English) for category and color.
+   * RLS policy verifies profile_id belongs to authenticated user.
+   */
+  async saveClothing(input: SaveClothingInput): Promise<ApiResponse<SaveClothingResult>> {
+    try {
+      const dbCategory = UI_TO_DB_CATEGORY[input.category];
+      const dbColor = UI_TO_DB_COLOR[input.color];
+
+      if (!dbCategory || !dbColor) {
+        return { data: null, error: new Error('Invalid category or color') };
+      }
+
+      const { data, error } = await supabase
+        .from('clothes')
+        .insert({
+          profile_id: input.profileId,
+          category: dbCategory,
+          color: dbColor,
+          original_image_url: input.originalImagePath,
+          processed_image_url: input.processedImagePath,
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        throw new Error('Unable to save clothing');
+      }
+
+      return {
+        data: { id: data.id },
+        error: null,
+      };
+    } catch (error) {
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Unknown error'),

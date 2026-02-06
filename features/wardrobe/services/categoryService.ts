@@ -5,8 +5,8 @@
  * Helper functions for parsing and validating clothing categories.
  */
 
-import type { ClothingCategory } from '../types/wardrobe.types';
-import { CATEGORY_LABELS, CATEGORY_ORDER } from '../types/wardrobe.types';
+import type { ClothingCategory, ClothingColor } from '../types/wardrobe.types';
+import { CATEGORY_LABELS, CATEGORY_ORDER, COLOR_ORDER } from '../types/wardrobe.types';
 
 /**
  * Threshold for pre-selecting suggested category
@@ -31,6 +31,17 @@ export const categoryService = {
     if (!categoryString) return null;
     const category = categoryString as ClothingCategory;
     return CATEGORY_ORDER.includes(category) ? category : null;
+  },
+
+  /**
+   * Parse color from string param (same pattern as parseCategory)
+   * @param colorString - Color string from navigation params
+   * @returns Valid color or null
+   */
+  parseColor(colorString?: string): ClothingColor | null {
+    if (!colorString) return null;
+    const color = colorString as ClothingColor;
+    return COLOR_ORDER.includes(color) ? color : null;
   },
 
   /**

@@ -212,6 +212,45 @@ export class ProcessingError extends Error {
   }
 }
 
+// ============================================
+// Save Types (Story 2.7)
+// ============================================
+
+/**
+ * Params reçus de ColorSelectionScreen via navigation
+ * Expo Router string params -> parsing requis
+ */
+export interface SaveScreenParams {
+  originalUrl: string;
+  processedUrl: string;
+  publicId: string;
+  category: string;
+  color: string;
+}
+
+/**
+ * Input pour clothingService.saveClothing()
+ * Contient toutes les données nécessaires à la sauvegarde
+ */
+export interface SaveClothingInput {
+  profileId: string;
+  category: ClothingCategory;
+  color: ClothingColor;
+  originalImagePath: string;
+  processedImagePath: string | null;
+}
+
+/**
+ * Résultat de clothingService.saveClothing()
+ */
+export interface SaveClothingResult {
+  id: string;
+}
+
+// ============================================
+// Processing Types (Story 2.3 + 2.4) - continued
+// ============================================
+
 /** Valid processing error codes for type guard validation */
 const PROCESSING_ERROR_CODES: readonly ProcessingErrorCode[] = [
   'timeout',

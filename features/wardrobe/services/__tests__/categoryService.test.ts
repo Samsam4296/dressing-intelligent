@@ -30,6 +30,24 @@ describe('categoryService', () => {
     });
   });
 
+  describe('parseColor', () => {
+    it('returns valid color for known FR color values', () => {
+      expect(categoryService.parseColor('noir')).toBe('noir');
+      expect(categoryService.parseColor('blanc')).toBe('blanc');
+      expect(categoryService.parseColor('multicolore')).toBe('multicolore');
+      expect(categoryService.parseColor('bleu')).toBe('bleu');
+      expect(categoryService.parseColor('rouge')).toBe('rouge');
+    });
+
+    it('returns null for invalid, empty, or undefined values', () => {
+      expect(categoryService.parseColor('invalid')).toBeNull();
+      expect(categoryService.parseColor('BLACK')).toBeNull();
+      expect(categoryService.parseColor('black')).toBeNull(); // EN not accepted
+      expect(categoryService.parseColor(undefined)).toBeNull();
+      expect(categoryService.parseColor('')).toBeNull();
+    });
+  });
+
   describe('parseConfidence', () => {
     it('parses valid confidence string', () => {
       expect(categoryService.parseConfidence('75')).toBe(75);

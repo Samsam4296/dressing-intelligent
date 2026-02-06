@@ -19,6 +19,11 @@ jest.mock('@/lib/supabase', () => ({
           })),
         })),
       })),
+      insert: jest.fn(() => ({
+        select: jest.fn(() => ({
+          single: jest.fn(),
+        })),
+      })),
     })),
   },
 }));
@@ -175,6 +180,71 @@ describe('clothingService', () => {
         expect(result.data).toBeNull();
         expect(result.error?.message).toBe('Unable to update category');
       });
+    });
+  });
+
+  describe('saveClothing', () => {
+    const validInput = {
+      profileId: '123e4567-e89b-12d3-a456-426614174000',
+      category: 'haut' as const,
+      color: 'noir' as const,
+      originalImagePath: 'user-123/original.jpg',
+      processedImagePath: 'user-123/processed.jpg',
+    };
+
+    it('inserts with mapped EN values and returns id', async () => {
+      const mockSingle = jest.fn().mockResolvedValue({
+        data: { id: 'new-clothing-id' },
+        error: null,
+      });
+
+      const mockSelect = jest.fn().mockReturnValue({ single: mockSingle });
+      const mockInsert = jest.fn().mockReturnValue({ select: mockSelect });
+
+      (supabase.from as jest.Mock).mockReturnValue({ insert: mockInsert });
+
+      const result = await clothingService.saveClothing(validInput);
+
+      expect(result.error).toBeNull();
+      expect(result.data).toEqual({ id: 'new-clothing-id' });
+      expect(supabase.from).toHaveBeenCalledWith('clothes');
+      expect(mockInsert).toHaveBeenCalledWith({
+        profile_id: validInput.profileId,
+        category: 'top', // haut -> top
+        color: 'black', // noir -> black
+        original_image_url: validInput.originalImagePath,
+        processed_image_url: validInput.processedImagePath,
+      });
+    });
+
+    it('returns error for invalid category/color', async () => {
+      const result = await clothingService.saveClothing({
+        ...validInput,
+        category: 'invalid' as any,
+      });
+
+      expect(result.data).toBeNull();
+      expect(result.error?.message).toBe('Invalid category or color');
+    });
+
+    it('returns generic error message on DB failure', async () => {
+      const mockSingle = jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'RLS policy violation' },
+      });
+
+      (supabase.from as jest.Mock).mockReturnValue({
+        insert: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            single: mockSingle,
+          }),
+        }),
+      });
+
+      const result = await clothingService.saveClothing(validInput);
+
+      expect(result.data).toBeNull();
+      expect(result.error?.message).toBe('Unable to save clothing');
     });
   });
 });
