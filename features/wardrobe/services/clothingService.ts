@@ -7,6 +7,7 @@
  * Handles category and color mapping between UI (French) and DB (English).
  */
 
+import * as Sentry from '@sentry/react-native';
 import { supabase } from '@/lib/supabase';
 import type {
   ClothingCategory,
@@ -93,7 +94,8 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
 
 /**
  * Clothing service for managing clothing items.
- * Error logging is handled by the mutation hook layer.
+ * Mutation error logging is handled by the mutation hook layer.
+ * Query error logging (getClothes) is handled directly via Sentry.
  */
 export const clothingService = {
   /**
@@ -135,10 +137,12 @@ export const clothingService = {
 
       return { data: clothes, error: null };
     } catch (error) {
-      return {
-        data: null,
-        error: error instanceof Error ? error : new Error('Unknown error'),
-      };
+      const err = error instanceof Error ? error : new Error('Unknown error');
+      Sentry.captureException(err, {
+        tags: { service: 'clothingService', method: 'getClothes' },
+        extra: { profileId },
+      });
+      return { data: null, error: err };
     }
   },
 

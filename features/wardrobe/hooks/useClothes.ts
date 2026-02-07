@@ -6,11 +6,12 @@ const SIGNED_URL_TTL = 15 * 60 * 1000; // 15 min — must stay <= SIGNED_URL_EXP
 
 export function useClothes(profileId: string | null) {
   return useQuery({
-    queryKey: queryKeys.clothes.list(profileId!),
+    queryKey: queryKeys.clothes.list(profileId ?? ''),
     queryFn: async () => {
-      const { data, error } = await clothingService.getClothes(profileId!);
+      if (!profileId) return [];
+      const { data, error } = await clothingService.getClothes(profileId);
       if (error) throw error;
-      return data!;
+      return data ?? [];
     },
     enabled: !!profileId,
     staleTime: 10 * 60 * 1000, // 10 min — refetch before signed URLs expire

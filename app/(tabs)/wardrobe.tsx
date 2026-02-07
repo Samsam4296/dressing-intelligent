@@ -1,17 +1,23 @@
+import { useState, useMemo } from 'react';
 import { ActivityIndicator, View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { useCurrentProfileId } from '@/features/profiles';
-import { useClothes } from '@/features/wardrobe/hooks/useClothes';
-import { WardrobeGrid } from '@/features/wardrobe/components/WardrobeGrid';
-import { EmptyWardrobe } from '@/features/wardrobe/components/EmptyWardrobe';
+import { useClothes, WardrobeGrid, EmptyWardrobe, CategoryFilterBar } from '@/features/wardrobe';
+import type { ClothingCategory } from '@/features/wardrobe';
 
 function WardrobeContent() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const profileId = useCurrentProfileId();
   const { data: clothes, isLoading, isError, refetch, isRefetching } = useClothes(profileId);
+  const [selectedCategory, setSelectedCategory] = useState<ClothingCategory | null>(null);
+
+  const filteredClothes = useMemo(
+    () => (selectedCategory ? clothes?.filter((c) => c.category === selectedCategory) : clothes),
+    [clothes, selectedCategory]
+  );
 
   if (isLoading) {
     return (
@@ -47,7 +53,20 @@ function WardrobeContent() {
     return <EmptyWardrobe />;
   }
 
-  return <WardrobeGrid clothes={clothes} isRefetching={isRefetching} onRefresh={refetch} />;
+  return (
+    <>
+      <CategoryFilterBar
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
+      <WardrobeGrid
+        clothes={filteredClothes ?? []}
+        activeFilter={selectedCategory}
+        isRefetching={isRefetching}
+        onRefresh={refetch}
+      />
+    </>
+  );
 }
 
 export default function WardrobeScreen() {

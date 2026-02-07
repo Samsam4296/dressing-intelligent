@@ -28,6 +28,7 @@ export { ColorSelector } from './components/ColorSelector';
 export { WardrobeGrid } from './components/WardrobeGrid';
 export { ClothingCard } from './components/ClothingCard';
 export { EmptyWardrobe } from './components/EmptyWardrobe';
+export { CategoryFilterBar } from './components/CategoryFilterBar';
 
 // Hooks
 export { useUpdateCategoryMutation, wardrobeKeys } from './hooks/useUpdateCategoryMutation';

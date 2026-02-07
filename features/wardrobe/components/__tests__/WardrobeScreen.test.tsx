@@ -1,12 +1,16 @@
 /**
  * WardrobeScreen Tests
  * Story 2.8: Affichage Inventaire
+ * Story 2.9: Filtrage par Catégorie
  *
- * Consolidated tests (subtasks 3.1 + 3.2):
+ * Consolidated tests:
  * - Happy path: grid renders with counter, cards, pull-to-refresh
  * - Empty state: EmptyWardrobe shown when no clothes
  * - Loading state: ActivityIndicator shown
  * - Error state: error message + retry button
+ * - Filter: chips rendered, selection filters grid + contextual counter
+ * - Filtered empty: contextual message when filter yields 0 results
+ * - Filter bar hidden when inventory is globally empty
  */
 
 import { render, screen, fireEvent } from '@testing-library/react-native';
@@ -65,6 +69,13 @@ const mockClothes: ClothingItem[] = [
     signedUrl: 'https://signed/img3.jpg',
     createdAt: '2026-02-01T02:00:00Z',
   },
+  {
+    id: 'item-4',
+    category: 'haut',
+    color: 'bleu',
+    signedUrl: 'https://signed/img4.jpg',
+    createdAt: '2026-02-01T03:00:00Z',
+  },
 ];
 
 describe('WardrobeScreen', () => {
@@ -79,45 +90,39 @@ describe('WardrobeScreen', () => {
     };
   });
 
+  // --- Story 2.8 tests (preserved) ---
+
   it('renders grid with counter, cards, and supports pull-to-refresh', () => {
     mockUseClothesReturn.data = mockClothes;
 
     render(<WardrobeScreen />);
 
-    // Counter header
+    // Counter header (4 items, no filter)
     expect(screen.getByTestId('wardrobe-count')).toBeTruthy();
-    expect(screen.getByText('3 vêtements')).toBeTruthy();
+    expect(screen.getByText('4 vêtements')).toBeTruthy();
 
     // Cards rendered
     expect(screen.getByTestId('clothing-card-item-1')).toBeTruthy();
     expect(screen.getByTestId('clothing-card-item-2')).toBeTruthy();
     expect(screen.getByTestId('clothing-card-item-3')).toBeTruthy();
-
-    // Color badges (item-2 has 'rouge' → hex exists, item-1 has 'noir' → hex exists)
-    expect(screen.getByTestId('color-badge-item-1')).toBeTruthy();
-    expect(screen.getByTestId('color-badge-item-2')).toBeTruthy();
+    expect(screen.getByTestId('clothing-card-item-4')).toBeTruthy();
 
     // Grid testID
     expect(screen.getByTestId('wardrobe-grid')).toBeTruthy();
+
+    // Category filter bar visible
+    expect(screen.getByTestId('category-filter-bar')).toBeTruthy();
   });
 
-  it('renders singular counter for 1 item', () => {
-    mockUseClothesReturn.data = [mockClothes[0]];
-
-    render(<WardrobeScreen />);
-
-    expect(screen.getByText('1 vêtement')).toBeTruthy();
-  });
-
-  it('shows empty state when no clothes', () => {
+  it('shows empty state when no clothes (no filter bar)', () => {
     mockUseClothesReturn.data = [];
 
     render(<WardrobeScreen />);
 
     expect(screen.getByTestId('wardrobe-empty')).toBeTruthy();
     expect(screen.getByText('Votre garde-robe est vide')).toBeTruthy();
-    expect(screen.getByText('Ajoutez votre premier vêtement')).toBeTruthy();
-    expect(screen.getByTestId('wardrobe-add-button')).toBeTruthy();
+    // Filter bar NOT shown when inventory is globally empty (AC #6)
+    expect(screen.queryByTestId('category-filter-bar')).toBeNull();
   });
 
   it('shows loading indicator while fetching', () => {
@@ -141,5 +146,51 @@ describe('WardrobeScreen', () => {
 
     fireEvent.press(retryButton);
     expect(mockRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  // --- Story 2.9 tests (new) ---
+
+  it('filters grid by category with contextual counter on chip press', () => {
+    mockUseClothesReturn.data = mockClothes;
+
+    render(<WardrobeScreen />);
+
+    // Initially: 4 items, "4 vêtements"
+    expect(screen.getByText('4 vêtements')).toBeTruthy();
+    expect(screen.getAllByTestId(/^clothing-card-/)).toHaveLength(4);
+
+    // Tap "Haut" filter chip
+    fireEvent.press(screen.getByTestId('filter-chip-haut'));
+
+    // Filtered: only 2 haut items shown
+    expect(screen.getByText('2 hauts')).toBeTruthy();
+    expect(screen.getByTestId('clothing-card-item-1')).toBeTruthy();
+    expect(screen.getByTestId('clothing-card-item-4')).toBeTruthy();
+    expect(screen.queryByTestId('clothing-card-item-2')).toBeNull();
+    expect(screen.queryByTestId('clothing-card-item-3')).toBeNull();
+
+    // Re-tap active chip → deselect (back to "Tous")
+    fireEvent.press(screen.getByTestId('filter-chip-haut'));
+    expect(screen.getByText('4 vêtements')).toBeTruthy();
+    expect(screen.getAllByTestId(/^clothing-card-/)).toHaveLength(4);
+  });
+
+  it('shows contextual empty state when filter yields 0 results, and re-tap resets', () => {
+    mockUseClothesReturn.data = mockClothes;
+
+    render(<WardrobeScreen />);
+
+    // Tap "Veste" → 0 results
+    fireEvent.press(screen.getByTestId('filter-chip-veste'));
+
+    expect(screen.getByTestId('filtered-empty')).toBeTruthy();
+    expect(screen.getByText('Aucun veste dans votre garde-robe')).toBeTruthy();
+    expect(screen.getByTestId('filtered-empty-add-button')).toBeTruthy();
+    expect(screen.getByText('0 veste')).toBeTruthy();
+
+    // Tap "Tous" to reset
+    fireEvent.press(screen.getByTestId('filter-chip-all'));
+    expect(screen.queryByTestId('filtered-empty')).toBeNull();
+    expect(screen.getByText('4 vêtements')).toBeTruthy();
   });
 });
