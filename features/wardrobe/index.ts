@@ -6,6 +6,7 @@
 // Story 2.5: Correction Catégorie
 // Story 2.6: Sélection Couleur
 // Story 2.7: Upload et Stockage Photo
+// Story 2.8: Affichage Inventaire
 
 // Services
 export { cameraService } from './services/cameraService';
@@ -24,10 +25,14 @@ export { CameraOverlayGuide } from './components/CameraOverlayGuide';
 export { CategorySelector } from './components/CategorySelector';
 export { EditCategoryModal } from './components/EditCategoryModal';
 export { ColorSelector } from './components/ColorSelector';
+export { WardrobeGrid } from './components/WardrobeGrid';
+export { ClothingCard } from './components/ClothingCard';
+export { EmptyWardrobe } from './components/EmptyWardrobe';
 
 // Hooks
 export { useUpdateCategoryMutation, wardrobeKeys } from './hooks/useUpdateCategoryMutation';
 export { useSaveClothingMutation } from './hooks/useSaveClothingMutation';
+export { useClothes } from './hooks/useClothes';
 
 // Screens
 export { CameraScreen } from './screens/CameraScreen';
@@ -46,6 +51,7 @@ export { CATEGORY_LABELS, CATEGORY_ICONS, CATEGORY_ORDER } from './types/wardrob
 export type { ClothingColor, ColorSelectionParams } from './types/wardrobe.types';
 export { COLOR_LABELS, COLOR_HEX, COLOR_ORDER } from './types/wardrobe.types';
 export type {
+  ClothingItem,
   SaveClothingInput,
   SaveClothingResult,
   SaveScreenParams,

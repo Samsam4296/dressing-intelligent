@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import type {
   ClothingCategory,
   ClothingColor,
+  ClothingItem,
   SaveClothingInput,
   SaveClothingResult,
 } from '../types/wardrobe.types';
@@ -79,6 +80,9 @@ export const DB_TO_UI_COLOR: Record<DbClothingColor, ClothingColor> = {
 /** Valid UI category values for runtime validation */
 const VALID_CATEGORIES = new Set<string>(Object.keys(UI_TO_DB_CATEGORY));
 
+const BUCKET_NAME = 'clothes-photos';
+const SIGNED_URL_EXPIRY = 900; // 15 minutes (NFR-S3)
+
 export interface UpdateCategoryResult {
   data: { id: string; category: ClothingCategory } | null;
   error: Error | null;
@@ -92,6 +96,52 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-
  * Error logging is handled by the mutation hook layer.
  */
 export const clothingService = {
+  /**
+   * Fetches all clothing items for a profile with signed image URLs.
+   * Uses batch createSignedUrls for performance.
+   * Maps DB values (English) → UI values (French).
+   */
+  async getClothes(profileId: string): Promise<ApiResponse<ClothingItem[]>> {
+    if (!UUID_REGEX.test(profileId)) {
+      return { data: null, error: new Error('Invalid profile ID format') };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('clothes')
+        .select('id, category, color, original_image_url, processed_image_url, created_at')
+        .eq('profile_id', profileId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw new Error('Unable to load clothes');
+      if (!data || data.length === 0) return { data: [], error: null };
+
+      // Prefer processed (background-removed) image, fall back to original
+      const paths = data.map((item) => item.processed_image_url ?? item.original_image_url);
+
+      const { data: signedUrls, error: signError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .createSignedUrls(paths, SIGNED_URL_EXPIRY);
+
+      if (signError) throw new Error('Unable to generate image URLs');
+
+      const clothes: ClothingItem[] = data.map((item, index) => ({
+        id: item.id,
+        category: DB_TO_UI_CATEGORY[item.category as DbClothingCategory],
+        color: DB_TO_UI_COLOR[item.color as DbClothingColor],
+        signedUrl: signedUrls?.[index]?.signedUrl ?? '',
+        createdAt: item.created_at,
+      }));
+
+      return { data: clothes, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
+    }
+  },
+
   /**
    * Update clothing category in Supabase.
    * RLS policy ensures user can only update their own items.

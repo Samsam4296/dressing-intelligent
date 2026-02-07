@@ -154,6 +154,22 @@ export interface ColorSelectionParams {
 }
 
 // ============================================
+// Inventory Types (Story 2.8)
+// ============================================
+
+/**
+ * A clothing item with signed URL for display in the wardrobe grid.
+ * Mapped from DB values (English) to UI values (French).
+ */
+export interface ClothingItem {
+  id: string;
+  category: ClothingCategory;
+  color: ClothingColor;
+  signedUrl: string;
+  createdAt: string;
+}
+
+// ============================================
 // Processing Types (Story 2.3 + 2.4)
 // ============================================
 

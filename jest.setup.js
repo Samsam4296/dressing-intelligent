@@ -64,6 +64,38 @@ jest.mock('react-native', () => {
     React.createElement('Image', { testID, source, ...props });
   const MockActivityIndicator = ({ testID, ...props }) =>
     React.createElement('ActivityIndicator', { testID, ...props });
+  const MockFlatList = ({
+    data,
+    renderItem,
+    ListHeaderComponent,
+    ListEmptyComponent,
+    testID,
+    keyExtractor,
+    refreshing,
+    onRefresh,
+    ...props
+  }) => {
+    const header = ListHeaderComponent
+      ? typeof ListHeaderComponent === 'function'
+        ? React.createElement(ListHeaderComponent)
+        : ListHeaderComponent
+      : null;
+    const items =
+      data && data.length > 0
+        ? data.map((item, index) =>
+            React.createElement(
+              React.Fragment,
+              { key: keyExtractor ? keyExtractor(item, index) : index },
+              renderItem({ item, index })
+            )
+          )
+        : ListEmptyComponent
+          ? typeof ListEmptyComponent === 'function'
+            ? React.createElement(ListEmptyComponent)
+            : ListEmptyComponent
+          : null;
+    return React.createElement('FlatList', { testID, ...props }, header, items);
+  };
 
   return {
     View: MockView,
@@ -75,6 +107,7 @@ jest.mock('react-native', () => {
     ScrollView: MockScrollView,
     Image: MockImage,
     ActivityIndicator: MockActivityIndicator,
+    FlatList: MockFlatList,
     StyleSheet: {
       create: (styles) => styles,
       flatten: (style) => style,
