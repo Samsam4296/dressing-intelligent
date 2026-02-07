@@ -19,9 +19,10 @@ export function CategoryFilterBar({ selectedCategory, onSelectCategory }: Catego
   const isDark = colorScheme === 'dark';
 
   function handlePress(category: ClothingCategory | null): void {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Re-tap on active chip clears the filter back to "Tous"
-    onSelectCategory(category === selectedCategory ? null : category);
+    const next = category === selectedCategory ? null : category;
+    // Skip haptics when tapping already-active "Tous" (no visual change)
+    if (next !== selectedCategory) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onSelectCategory(next);
   }
 
   return (
@@ -72,7 +73,7 @@ function FilterChip({ active, label, icon, onPress, isDark, testID }: FilterChip
   return (
     <Pressable
       onPress={onPress}
-      className={`min-h-[44px] flex-row items-center rounded-full px-4 py-2 ${
+      className={`min-h-[44px] min-w-[44px] flex-row items-center rounded-full px-4 py-2 ${
         active ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-800'
       }`}
       accessibilityRole="button"

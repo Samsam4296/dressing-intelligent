@@ -9,20 +9,28 @@ import { CATEGORY_ICONS, type ClothingCategory, type ClothingItem } from '../typ
 const GAP = 4;
 const PADDING = 12;
 
-/** Singular/plural forms for count display — French pluralization */
-const CATEGORY_COUNT_LABEL: Record<ClothingCategory, [singular: string, plural: string]> = {
-  haut: ['haut', 'hauts'],
-  bas: ['bas', 'bas'],
-  robe: ['robe', 'robes'],
-  veste: ['veste', 'vestes'],
-  chaussures: ['chaussures', 'chaussures'],
-  accessoire: ['accessoire', 'accessoires'],
+/** Singular/plural forms + gender for count display — French pluralization */
+const CATEGORY_COUNT_LABEL: Record<
+  ClothingCategory,
+  [singular: string, plural: string, feminine: boolean]
+> = {
+  haut: ['haut', 'hauts', false],
+  bas: ['bas', 'bas', false],
+  robe: ['robe', 'robes', true],
+  veste: ['veste', 'vestes', true],
+  chaussures: ['chaussures', 'chaussures', true],
+  accessoire: ['accessoire', 'accessoires', false],
 };
 
 function getCountLabel(count: number, filter: ClothingCategory | null): string {
   if (!filter) return `${count} vêtement${count > 1 ? 's' : ''}`;
   const [singular, plural] = CATEGORY_COUNT_LABEL[filter];
   return `${count} ${count > 1 ? plural : singular}`;
+}
+
+function getEmptyLabel(filter: ClothingCategory): string {
+  const [singular, , feminine] = CATEGORY_COUNT_LABEL[filter];
+  return `${feminine ? 'Aucune' : 'Aucun'} ${singular}`;
 }
 
 interface WardrobeGridProps {
@@ -83,7 +91,7 @@ export function WardrobeGrid({
               color={isDark ? '#4B5563' : '#D1D5DB'}
             />
             <Text className="mt-3 text-center text-gray-500 dark:text-gray-400">
-              Aucun {CATEGORY_COUNT_LABEL[activeFilter][0]} dans votre garde-robe
+              {getEmptyLabel(activeFilter)} dans votre garde-robe
             </Text>
             <Pressable
               onPress={() => router.push('/(app)/wardrobe/camera')}

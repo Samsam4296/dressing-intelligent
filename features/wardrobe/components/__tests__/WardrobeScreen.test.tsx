@@ -184,7 +184,7 @@ describe('WardrobeScreen', () => {
     fireEvent.press(screen.getByTestId('filter-chip-veste'));
 
     expect(screen.getByTestId('filtered-empty')).toBeTruthy();
-    expect(screen.getByText('Aucun veste dans votre garde-robe')).toBeTruthy();
+    expect(screen.getByText('Aucune veste dans votre garde-robe')).toBeTruthy();
     expect(screen.getByTestId('filtered-empty-add-button')).toBeTruthy();
     expect(screen.getByText('0 veste')).toBeTruthy();
 
