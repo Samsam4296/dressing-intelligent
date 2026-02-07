@@ -7,6 +7,7 @@
 // Story 2.6: Sélection Couleur
 // Story 2.7: Upload et Stockage Photo
 // Story 2.8: Affichage Inventaire
+// Story 2.10: Modification Vêtement
 
 // Services
 export { cameraService } from './services/cameraService';
@@ -16,7 +17,7 @@ export type { GalleryImageResult, GalleryErrorCode } from './services/gallerySer
 export { imageProcessingService } from './services/imageProcessingService';
 export { categoryService } from './services/categoryService';
 export { clothingService } from './services/clothingService';
-export type { UpdateCategoryResult } from './services/clothingService';
+export type { UpdateCategoryResult, UpdateClothingResult } from './services/clothingService';
 export { UI_TO_DB_COLOR, DB_TO_UI_COLOR } from './services/clothingService';
 export { storageService } from './services/storageService';
 
@@ -24,6 +25,7 @@ export { storageService } from './services/storageService';
 export { CameraOverlayGuide } from './components/CameraOverlayGuide';
 export { CategorySelector } from './components/CategorySelector';
 export { EditCategoryModal } from './components/EditCategoryModal';
+export { EditClothingModal } from './components/EditClothingModal';
 export { ColorSelector } from './components/ColorSelector';
 export { WardrobeGrid } from './components/WardrobeGrid';
 export { ClothingCard } from './components/ClothingCard';
@@ -32,6 +34,7 @@ export { CategoryFilterBar } from './components/CategoryFilterBar';
 
 // Hooks
 export { useUpdateCategoryMutation, wardrobeKeys } from './hooks/useUpdateCategoryMutation';
+export { useUpdateClothingMutation } from './hooks/useUpdateClothingMutation';
 export { useSaveClothingMutation } from './hooks/useSaveClothingMutation';
 export { useClothes } from './hooks/useClothes';
 

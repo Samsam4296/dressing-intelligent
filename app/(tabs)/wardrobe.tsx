@@ -1,11 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ActivityIndicator, View, Text, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { useCurrentProfileId } from '@/features/profiles';
-import { useClothes, WardrobeGrid, EmptyWardrobe, CategoryFilterBar } from '@/features/wardrobe';
-import type { ClothingCategory } from '@/features/wardrobe';
+import {
+  useClothes,
+  WardrobeGrid,
+  EmptyWardrobe,
+  CategoryFilterBar,
+  EditClothingModal,
+  useUpdateClothingMutation,
+} from '@/features/wardrobe';
+import type { ClothingCategory, ClothingColor, ClothingItem } from '@/features/wardrobe';
 
 function WardrobeContent() {
   const { colorScheme } = useColorScheme();
@@ -13,11 +20,32 @@ function WardrobeContent() {
   const profileId = useCurrentProfileId();
   const { data: clothes, isLoading, isError, refetch, isRefetching } = useClothes(profileId);
   const [selectedCategory, setSelectedCategory] = useState<ClothingCategory | null>(null);
+  const [editItem, setEditItem] = useState<ClothingItem | null>(null);
+  const updateMutation = useUpdateClothingMutation();
 
   const filteredClothes = useMemo(
     () => (selectedCategory ? clothes?.filter((c) => c.category === selectedCategory) : clothes),
     [clothes, selectedCategory]
   );
+
+  const handleItemPress = useCallback((item: ClothingItem) => {
+    setEditItem(item);
+  }, []);
+
+  const handleEditConfirm = useCallback(
+    (category: ClothingCategory, color: ClothingColor) => {
+      if (!profileId || !editItem) return;
+      updateMutation.mutate(
+        { profileId, clothingId: editItem.id, category, color },
+        { onSuccess: () => setEditItem(null) }
+      );
+    },
+    [profileId, editItem, updateMutation]
+  );
+
+  const handleEditClose = useCallback(() => {
+    setEditItem(null);
+  }, []);
 
   if (isLoading) {
     return (
@@ -64,6 +92,14 @@ function WardrobeContent() {
         activeFilter={selectedCategory}
         isRefetching={isRefetching}
         onRefresh={refetch}
+        onItemPress={handleItemPress}
+      />
+      <EditClothingModal
+        visible={!!editItem}
+        item={editItem}
+        onConfirm={handleEditConfirm}
+        onClose={handleEditClose}
+        isLoading={updateMutation.isPending}
       />
     </>
   );

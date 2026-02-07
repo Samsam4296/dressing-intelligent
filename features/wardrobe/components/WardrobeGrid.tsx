@@ -38,6 +38,7 @@ interface WardrobeGridProps {
   activeFilter: ClothingCategory | null;
   isRefetching: boolean;
   onRefresh: () => void;
+  onItemPress?: (item: ClothingItem) => void;
 }
 
 export function WardrobeGrid({
@@ -45,6 +46,7 @@ export function WardrobeGrid({
   activeFilter,
   isRefetching,
   onRefresh,
+  onItemPress,
 }: WardrobeGridProps) {
   const { width: screenWidth } = useWindowDimensions();
   const { colorScheme } = useColorScheme();
@@ -55,9 +57,14 @@ export function WardrobeGrid({
 
   const renderItem = useCallback(
     ({ item }: { item: ClothingItem }) => (
-      <ClothingCard item={item} size={cardSize} isDark={isDark} />
+      <ClothingCard
+        item={item}
+        size={cardSize}
+        isDark={isDark}
+        onPress={onItemPress ? () => onItemPress(item) : undefined}
+      />
     ),
-    [cardSize, isDark]
+    [cardSize, isDark, onItemPress]
   );
 
   return (

@@ -81,11 +81,19 @@ export const DB_TO_UI_COLOR: Record<DbClothingColor, ClothingColor> = {
 /** Valid UI category values for runtime validation */
 const VALID_CATEGORIES = new Set<string>(Object.keys(UI_TO_DB_CATEGORY));
 
+/** Valid UI color values for runtime validation */
+const VALID_COLORS = new Set<string>(Object.keys(UI_TO_DB_COLOR));
+
 const BUCKET_NAME = 'clothes-photos';
 const SIGNED_URL_EXPIRY = 900; // 15 minutes (NFR-S3)
 
 export interface UpdateCategoryResult {
   data: { id: string; category: ClothingCategory } | null;
+  error: Error | null;
+}
+
+export interface UpdateClothingResult {
+  data: { id: string; category: ClothingCategory; color: ClothingColor } | null;
   error: Error | null;
 }
 
@@ -193,6 +201,60 @@ export const clothingService = {
       };
     } catch (error) {
       // P1-01: No Sentry here - error logging handled in mutation hook
+      return {
+        data: null,
+        error: error instanceof Error ? error : new Error('Unknown error'),
+      };
+    }
+  },
+
+  /**
+   * Update clothing category and color in a single Supabase call.
+   * Story 2.10: Modification Vêtement
+   * RLS policy ensures user can only update their own items.
+   */
+  async updateClothing(
+    clothingId: string,
+    updates: { category: ClothingCategory; color: ClothingColor }
+  ): Promise<UpdateClothingResult> {
+    if (!UUID_REGEX.test(clothingId)) {
+      return { data: null, error: new Error('Invalid clothing ID format') };
+    }
+
+    if (!VALID_CATEGORIES.has(updates.category)) {
+      return { data: null, error: new Error('Invalid category provided') };
+    }
+
+    if (!VALID_COLORS.has(updates.color)) {
+      return { data: null, error: new Error('Invalid color provided') };
+    }
+
+    try {
+      const dbCategory = UI_TO_DB_CATEGORY[updates.category];
+      const dbColor = UI_TO_DB_COLOR[updates.color];
+
+      const { data, error } = await supabase
+        .from('clothes')
+        .update({ category: dbCategory, color: dbColor })
+        .eq('id', clothingId)
+        .select('id, category, color')
+        .single();
+
+      if (error) {
+        throw new Error('Unable to update clothing');
+      }
+
+      const uiCategory = DB_TO_UI_CATEGORY[data.category as DbClothingCategory];
+      const uiColor = DB_TO_UI_COLOR[data.color as DbClothingColor];
+      if (!uiCategory || !uiColor) {
+        throw new Error('Unable to update clothing');
+      }
+
+      return {
+        data: { id: data.id, category: uiCategory, color: uiColor },
+        error: null,
+      };
+    } catch (error) {
       return {
         data: null,
         error: error instanceof Error ? error : new Error('Unknown error'),

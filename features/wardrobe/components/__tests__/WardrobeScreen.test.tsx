@@ -34,6 +34,13 @@ jest.mock('@/features/profiles', () => ({
   useCurrentProfileId: () => 'profile-123',
 }));
 
+jest.mock('@/features/wardrobe/hooks/useUpdateClothingMutation', () => ({
+  useUpdateClothingMutation: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+  }),
+}));
+
 // Mock expo-image (not in global jest.setup)
 jest.mock('expo-image', () => {
   const React = require('react');

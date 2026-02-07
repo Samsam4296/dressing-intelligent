@@ -1,4 +1,9 @@
 /**
+ * @deprecated Use useUpdateClothingMutation instead (Story 2.10).
+ * This hook only updates category. The new hook updates both category and color
+ * with correct query keys (fixes optimistic update bug).
+ * Kept for backwards compatibility with test-edit-category.tsx (dev-only screen).
+ *
  * useUpdateCategoryMutation Hook
  * Story 2.5: Correction Catégorie
  *
